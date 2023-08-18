@@ -99,6 +99,13 @@ def relu_back(x: float, d: float) -> float:
     r"""If $f = relu$ compute $d \times f'(x)$"""
     return d if x >= 0.0 else 0.0
 
+def sigmoid_back(x: float, d: float) -> float:
+    r"""
+    \frac{\mathrm{d} \text{sigmoid}}{\mathrm{d} x} =\text{sigmoid}(x)(1-\text{sigmoid}(x))
+    """
+    return d * sigmoid(x) * (1 - sigmoid(x))
+
+
 
 def map(fn: Callable[[float], float]) -> Callable[[Iterable[float]], Iterable[float]]:
     """
@@ -177,6 +184,15 @@ def reduce(
 
     return _reduce
 
+def filter(fn: Callable[[float], bool]) -> Callable[[Iterable[float]], Iterable[float]]:
+    def _filter(ls: Iterable[float]):
+        ret = []
+        for x in ls:
+            if fn(x):
+                ret.append(x)
+        return ret
+
+    return _filter
 
 def sum(ls: Iterable[float]) -> float:
     """Sum up a list using `reduce` and `add`."""

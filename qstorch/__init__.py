@@ -1,6 +1,6 @@
 # MODULE 0
 # MODULE 1
-import minitorch.scalar_functions as scalar_functions  # noqa: F401,F403
+import qstorch.scalar_functions as scalar_functions  # noqa: F401,F403
 
 from .autodiff import *  # noqa: F401,F403
 from .cuda_ops import *  # noqa: F401,F403

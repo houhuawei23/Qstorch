@@ -11,8 +11,8 @@ from hypothesis.strategies import (
     permutations,
 )
 
-import minitorch
-from minitorch import Tensor, TensorBackend, TensorData, UserIndex, UserShape
+import qstorch
+from qstorch import Tensor, TensorBackend, TensorData, UserIndex, UserShape
 
 from .strategies import small_ints
 
@@ -29,11 +29,11 @@ def vals(draw: DrawFn, size: int, number: SearchStrategy[float]) -> Tensor:
             max_size=size,
         )
     )
-    return minitorch.tensor(pts)
+    return qstorch.tensor(pts)
 
 
 @composite
-def shapes(draw: DrawFn) -> minitorch.UserShape:
+def shapes(draw: DrawFn) -> qstorch.UserShape:
     lsize = draw(lists(small_ints, min_size=1, max_size=4))
     return tuple(lsize)
 
@@ -46,13 +46,13 @@ def tensor_data(
 ) -> TensorData:
     if shape is None:
         shape = draw(shapes())
-    size = int(minitorch.prod(shape))
+    size = int(qstorch.prod(shape))
     data = draw(lists(numbers, min_size=size, max_size=size))
     permute: List[int] = draw(permutations(range(len(shape))))
     permute_shape = tuple([shape[i] for i in permute])
     z = sorted(enumerate(permute), key=lambda a: a[1])
     reverse_permute = [a[0] for a in z]
-    td = minitorch.TensorData(data, permute_shape)
+    td = qstorch.TensorData(data, permute_shape)
     ret = td.permute(*reverse_permute)
     assert ret.shape[0] == shape[0]
     return ret
@@ -72,9 +72,9 @@ def tensors(
     backend: Optional[TensorBackend] = None,
     shape: Optional[UserShape] = None,
 ) -> Tensor:
-    backend = minitorch.SimpleBackend if backend is None else backend
+    backend = qstorch.SimpleBackend if backend is None else backend
     td = draw(tensor_data(numbers, shape=shape))
-    return minitorch.Tensor(td, backend=backend)
+    return qstorch.Tensor(td, backend=backend)
 
 
 @composite
@@ -86,14 +86,14 @@ def shaped_tensors(
     ),
     backend: Optional[TensorBackend] = None,
 ) -> List[Tensor]:
-    backend = minitorch.SimpleBackend if backend is None else backend
+    backend = qstorch.SimpleBackend if backend is None else backend
     td = draw(tensor_data(numbers))
     values = []
     for i in range(n):
         data = draw(lists(numbers, min_size=td.size, max_size=td.size))
         values.append(
-            minitorch.Tensor(
-                minitorch.TensorData(data, td.shape, td.strides), backend=backend
+            qstorch.Tensor(
+                qstorch.TensorData(data, td.shape, td.strides), backend=backend
             )
         )
     return values
@@ -113,9 +113,9 @@ def matmul_tensors(
     l2 = (j, k)
     values = []
     for shape in [l1, l2]:
-        size = int(minitorch.prod(shape))
+        size = int(qstorch.prod(shape))
         data = draw(lists(numbers, min_size=size, max_size=size))
-        values.append(minitorch.Tensor(minitorch.TensorData(data, shape)))
+        values.append(qstorch.Tensor(qstorch.TensorData(data, shape)))
     return values
 
 

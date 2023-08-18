@@ -4,8 +4,8 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import lists
 
-from minitorch import MathTest
-from minitorch.operators import (
+from qstorch import MathTest
+from qstorch.operators import (
     add,
     addLists,
     eq,
@@ -122,7 +122,7 @@ def test_transitive(a: float, b: float, c: float) -> None:
 @pytest.mark.task0_2
 def test_symmetric() -> None:
     """
-    Write a test that ensures that :func:`minitorch.operators.mul` is symmetric, i.e.
+    Write a test that ensures that :func:`qstorch.operators.mul` is symmetric, i.e.
     gives the same value regardless of the order of its input.
     """
     # TODO: Implement for Task 0.2.

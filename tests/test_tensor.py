@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data, lists, permutations
 
-from minitorch import MathTestVariable, Tensor, grad_check, tensor
+from qstorch import MathTestVariable, Tensor, grad_check, tensor
 
 from .strategies import assert_close, small_floats
 from .tensor_strategies import shaped_tensors, tensors

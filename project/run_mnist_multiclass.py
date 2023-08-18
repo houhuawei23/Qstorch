@@ -1,11 +1,11 @@
 from mnist import MNIST
 
-import minitorch
+import qstorch
 
 mndata = MNIST("project/data/")
 images, labels = mndata.load_training()
 
-BACKEND = minitorch.TensorBackend(minitorch.FastOps)
+BACKEND = qstorch.TensorBackend(qstorch.FastOps)
 BATCH = 16
 
 # Number of classes (10 digits)
@@ -16,11 +16,11 @@ H, W = 28, 28
 
 
 def RParam(*shape):
-    r = 0.1 * (minitorch.rand(shape, backend=BACKEND) - 0.5)
-    return minitorch.Parameter(r)
+    r = 0.1 * (qstorch.rand(shape, backend=BACKEND) - 0.5)
+    return qstorch.Parameter(r)
 
 
-class Linear(minitorch.Module):
+class Linear(qstorch.Module):
     def __init__(self, in_size, out_size):
         super().__init__()
         self.weights = RParam(in_size, out_size)
@@ -34,7 +34,7 @@ class Linear(minitorch.Module):
         ).view(batch, self.out_size) + self.bias.value
 
 
-class Conv2d(minitorch.Module):
+class Conv2d(qstorch.Module):
     def __init__(self, in_channels, out_channels, kh, kw):
         super().__init__()
         self.weights = RParam(out_channels, in_channels, kh, kw)
@@ -42,12 +42,12 @@ class Conv2d(minitorch.Module):
 
     def forward(self, input):
         # ASSIGN4.5
-        out = minitorch.conv2d(input, self.weights.value) + self.bias.value
+        out = qstorch.conv2d(input, self.weights.value) + self.bias.value
         return out
         # END ASSIGN4.5
 
 
-class Network(minitorch.Module):
+class Network(qstorch.Module):
     """
     Implement a CNN for MNist classification based on LeNet.
 
@@ -82,11 +82,11 @@ class Network(minitorch.Module):
         self.mid = x
         x = self.conv2(x).relu()
         self.out = x
-        x = minitorch.avgpool2d(x, (4, 4))
+        x = qstorch.avgpool2d(x, (4, 4))
         x = self.linear1(x.view(BATCH, 392)).relu()
-        x = minitorch.dropout(x, 0.25, self.mode == "eval")
+        x = qstorch.dropout(x, 0.25, self.mode == "eval")
         x = self.linear2(x)
-        x = minitorch.logsoftmax(x, dim=1)
+        x = qstorch.logsoftmax(x, dim=1)
         return x
         # END ASSIGN4.5
 
@@ -112,7 +112,7 @@ class ImageTrain:
         self.model = Network()
 
     def run_one(self, x):
-        return self.model.forward(minitorch.tensor([x], backend=BACKEND))
+        return self.model.forward(qstorch.tensor([x], backend=BACKEND))
 
     def train(
         self, data_train, data_val, learning_rate, max_epochs=500, log_fn=default_log_fn
@@ -122,7 +122,7 @@ class ImageTrain:
         self.model = Network()
         model = self.model
         n_training_samples = len(X_train)
-        optim = minitorch.SGD(self.model.parameters(), learning_rate)
+        optim = qstorch.SGD(self.model.parameters(), learning_rate)
         losses = []
         for epoch in range(1, max_epochs + 1):
             total_loss = 0.0
@@ -134,10 +134,10 @@ class ImageTrain:
 
                 if n_training_samples - example_num <= BATCH:
                     continue
-                y = minitorch.tensor(
+                y = qstorch.tensor(
                     y_train[example_num : example_num + BATCH], backend=BACKEND
                 )
-                x = minitorch.tensor(
+                x = qstorch.tensor(
                     X_train[example_num : example_num + BATCH], backend=BACKEND
                 )
                 x.requires_grad_(True)
@@ -162,11 +162,11 @@ class ImageTrain:
 
                     correct = 0
                     for val_example_num in range(0, 1 * BATCH, BATCH):
-                        y = minitorch.tensor(
+                        y = qstorch.tensor(
                             y_val[val_example_num : val_example_num + BATCH],
                             backend=BACKEND,
                         )
-                        x = minitorch.tensor(
+                        x = qstorch.tensor(
                             X_val[val_example_num : val_example_num + BATCH],
                             backend=BACKEND,
                         )

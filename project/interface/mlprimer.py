@@ -14,12 +14,12 @@ from chalk import (
 from colour import Color
 from drawing import aqua, black, lightblue, lightred
 
-import minitorch
+import qstorch
 
 random.seed(10)
 
-s = minitorch.datasets["Simple"](10)
-spl = minitorch.datasets["Split"](10)
+s = qstorch.datasets["Simple"](10)
+spl = qstorch.datasets["Split"](10)
 
 
 def base_model(x1, x2):

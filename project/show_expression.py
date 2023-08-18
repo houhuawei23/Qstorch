@@ -6,13 +6,13 @@ Be sure you have the extra requirements installed.
 
 import networkx as nx
 
-import minitorch
+import qstorch
 
 
 ## Create an autodiff expression here.
 def expression():
-    x = minitorch.Scalar(1.0, name="x")
-    y = minitorch.Scalar(1.0, name="y")
+    x = qstorch.Scalar(1.0, name="x")
+    y = qstorch.Scalar(1.0, name="y")
     z = (x * x) * y + 10.0 * x
     z.name = "z"
     return z
@@ -25,7 +25,7 @@ class GraphBuilder:
         self.intermediates = {}
 
     def get_name(self, x):
-        if not isinstance(x, minitorch.Scalar):
+        if not isinstance(x, qstorch.Scalar):
             return "constant %s" % (x,)
         elif len(x.name) > 15:
             if x.name in self.intermediates:
@@ -60,7 +60,7 @@ class GraphBuilder:
                     G.add_edge(self.get_name(input), op, f"{i}")
 
                 for input in cur.history.inputs:
-                    if not isinstance(input, minitorch.Scalar):
+                    if not isinstance(input, qstorch.Scalar):
                         continue
 
                     seen = False

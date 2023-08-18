@@ -2,8 +2,8 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import DataObject, data
 
-import minitorch
-from minitorch import TensorData
+import qstorch
+from qstorch import TensorData
 
 from .tensor_strategies import indices, tensor_data
 
@@ -16,19 +16,19 @@ from .tensor_strategies import indices, tensor_data
 def test_layout() -> None:
     "Test basis properties of layout and strides"
     data = [0] * 3 * 5
-    tensor_data = minitorch.TensorData(data, (3, 5), (5, 1))
+    tensor_data = qstorch.TensorData(data, (3, 5), (5, 1))
 
     assert tensor_data.is_contiguous()
     assert tensor_data.shape == (3, 5)
     assert tensor_data.index((1, 0)) == 5
     assert tensor_data.index((1, 2)) == 7
 
-    tensor_data = minitorch.TensorData(data, (5, 3), (1, 5))
+    tensor_data = qstorch.TensorData(data, (5, 3), (1, 5))
     assert tensor_data.shape == (5, 3)
     assert not tensor_data.is_contiguous()
 
     data = [0] * 4 * 2 * 2
-    tensor_data = minitorch.TensorData(data, (4, 2, 2))
+    tensor_data = qstorch.TensorData(data, (4, 2, 2))
     assert tensor_data.strides == (4, 2, 1)
 
 
@@ -36,7 +36,7 @@ def test_layout() -> None:
 def test_layout_bad() -> None:
     "Test basis properties of layout and strides"
     data = [0] * 3 * 5
-    minitorch.TensorData(data, (3, 5), (6,))
+    qstorch.TensorData(data, (3, 5), (6,))
 
 
 @pytest.mark.task2_1
@@ -67,12 +67,12 @@ def test_index(tensor_data: TensorData) -> None:
         assert pos >= 0 and pos < tensor_data.size
 
     base = [0] * tensor_data.dims
-    with pytest.raises(minitorch.IndexingError):
+    with pytest.raises(qstorch.IndexingError):
         base[0] = -1
         tensor_data.index(tuple(base))
 
     if tensor_data.dims > 1:
-        with pytest.raises(minitorch.IndexingError):
+        with pytest.raises(qstorch.IndexingError):
             base = [0] * (tensor_data.dims - 1)
             tensor_data.index(tuple(base))
 
@@ -96,27 +96,27 @@ def test_permute(data: DataObject) -> None:
 
 @pytest.mark.task2_2
 def test_shape_broadcast() -> None:
-    c = minitorch.shape_broadcast((1,), (5, 5))
+    c = qstorch.shape_broadcast((1,), (5, 5))
     assert c == (5, 5)
 
-    c = minitorch.shape_broadcast((5, 5), (1,))
+    c = qstorch.shape_broadcast((5, 5), (1,))
     assert c == (5, 5)
 
-    c = minitorch.shape_broadcast((1, 5, 5), (5, 5))
+    c = qstorch.shape_broadcast((1, 5, 5), (5, 5))
     assert c == (1, 5, 5)
 
-    c = minitorch.shape_broadcast((5, 1, 5, 1), (1, 5, 1, 5))
+    c = qstorch.shape_broadcast((5, 1, 5, 1), (1, 5, 1, 5))
     assert c == (5, 5, 5, 5)
 
-    with pytest.raises(minitorch.IndexingError):
-        c = minitorch.shape_broadcast((5, 7, 5, 1), (1, 5, 1, 5))
+    with pytest.raises(qstorch.IndexingError):
+        c = qstorch.shape_broadcast((5, 7, 5, 1), (1, 5, 1, 5))
         print(c)
 
-    with pytest.raises(minitorch.IndexingError):
-        c = minitorch.shape_broadcast((5, 2), (5,))
+    with pytest.raises(qstorch.IndexingError):
+        c = qstorch.shape_broadcast((5, 2), (5,))
         print(c)
 
-    c = minitorch.shape_broadcast((2, 5), (5,))
+    c = qstorch.shape_broadcast((2, 5), (5,))
     assert c == (2, 5)
 
 

@@ -7,13 +7,13 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-import minitorch
+import qstorch
 
 
 def render_train_interface(
     TrainCls, graph=True, hidden_layer=True, parameter_control=False
 ):
-    datasets_map = minitorch.datasets
+    datasets_map = qstorch.datasets
     st.write("## Sandbox for Model Training")
 
     st.markdown("### Dataset")

@@ -4,8 +4,8 @@ from typing import List
 from hypothesis import given
 from hypothesis.strategies import DrawFn, composite, floats, integers, lists
 
-import minitorch
-from minitorch import Parameter, Scalar
+import qstorch
+from qstorch import Parameter, Scalar
 
 
 @composite
@@ -13,23 +13,23 @@ def scalars(
     draw: DrawFn, min_value: float = -100000, max_value: float = 100000
 ) -> Scalar:
     val = draw(floats(min_value=min_value, max_value=max_value))
-    return minitorch.Scalar(val)
+    return qstorch.Scalar(val)
 
 
-class Network(minitorch.Module):
+class Network(qstorch.Module):
     def __init__(self) -> None:
         super().__init__()
         self.layer = ScalarLinear(2, 1)
 
 
-class Network2(minitorch.Module):
+class Network2(qstorch.Module):
     def __init__(self) -> None:
         super().__init__()
         self.layer1 = ScalarLinear(2, 2)
         self.layer2 = ScalarLinear(2, 1)
 
 
-class ScalarLinear(minitorch.Module):
+class ScalarLinear(qstorch.Module):
     def __init__(self, in_size: int, out_size: int) -> None:
         super().__init__()
         self.weights: List[List[Parameter]] = []
@@ -39,13 +39,13 @@ class ScalarLinear(minitorch.Module):
             for j in range(out_size):
                 self.weights[i].append(
                     self.add_parameter(
-                        f"weight_{i}_{j}", minitorch.Scalar(2 * (random.random() - 0.5))
+                        f"weight_{i}_{j}", qstorch.Scalar(2 * (random.random() - 0.5))
                     )
                 )
         for j in range(out_size):
             self.bias.append(
                 self.add_parameter(
-                    f"bias_{j}", minitorch.Scalar(2 * (random.random() - 0.5))
+                    f"bias_{j}", qstorch.Scalar(2 * (random.random() - 0.5))
                 )
             )
 
@@ -77,7 +77,7 @@ def test_linear(inputs: List[Scalar], out_size: int) -> None:
 #         model.layer1.bias[1].update(b2)
 #         return model.forward([x1, x2])
 
-#     minitorch.derivative_check(check, *(inputs + bias))
+#     qstorch.derivative_check(check, *(inputs + bias))
 
 
 def test_nn_size() -> None:
@@ -91,7 +91,7 @@ def test_nn_size() -> None:
     assert model.layer1.weights[0][0].value.data != 0
 
     for p in model.parameters():
-        p.update(minitorch.Scalar(0))
+        p.update(qstorch.Scalar(0))
 
     assert model.layer2.bias[0].value.data == 0
     assert model.layer1.bias[0].value.data == 0

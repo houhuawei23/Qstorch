@@ -2,18 +2,18 @@ import random
 
 import embeddings
 
-import minitorch
+import qstorch
 from datasets import load_dataset
 
-BACKEND = minitorch.TensorBackend(minitorch.FastOps)
+BACKEND = qstorch.TensorBackend(qstorch.FastOps)
 
 
 def RParam(*shape):
-    r = 0.1 * (minitorch.rand(shape, backend=BACKEND) - 0.5)
-    return minitorch.Parameter(r)
+    r = 0.1 * (qstorch.rand(shape, backend=BACKEND) - 0.5)
+    return qstorch.Parameter(r)
 
 
-class Linear(minitorch.Module):
+class Linear(qstorch.Module):
     def __init__(self, in_size, out_size):
         super().__init__()
         self.weights = RParam(in_size, out_size)
@@ -27,7 +27,7 @@ class Linear(minitorch.Module):
         ).view(batch, self.out_size) + self.bias.value
 
 
-class Conv1d(minitorch.Module):
+class Conv1d(qstorch.Module):
     def __init__(self, in_channels, out_channels, kernel_width):
         super().__init__()
         self.weights = RParam(out_channels, in_channels, kernel_width)
@@ -35,12 +35,12 @@ class Conv1d(minitorch.Module):
 
     def forward(self, input):
         # ASSIGN4.5
-        out = minitorch.conv1d(input, self.weights.value) + self.bias.value
+        out = qstorch.conv1d(input, self.weights.value) + self.bias.value
         return out
         # END ASSIGN4.5
 
 
-class CNNSentimentKim(minitorch.Module):
+class CNNSentimentKim(qstorch.Module):
     """
     Implement a CNN for Sentiment classification based on Y. Kim 2014.
 
@@ -82,9 +82,9 @@ class CNNSentimentKim(minitorch.Module):
         x2 = self.conv2(x).relu()
         x3 = self.conv3(x).relu()
         # Max over each feature map
-        x = minitorch.max(x1, 2) + minitorch.max(x2, 2) + minitorch.max(x3, 2)
+        x = qstorch.max(x1, 2) + qstorch.max(x2, 2) + qstorch.max(x3, 2)
         x = self.linear(x.view(x.shape[0], self.feature_map_size))
-        x = minitorch.dropout(x, self.dropout, self.mode == "eval")
+        x = qstorch.dropout(x, self.dropout, self.mode == "eval")
         # Apply sigmoid and view as batch size
         return x.sigmoid().view(x.shape[0])
         # END ASSIGN4.5
@@ -149,7 +149,7 @@ class SentenceSentimentTrain:
         model = self.model
         (X_train, y_train) = data_train
         n_training_samples = len(X_train)
-        optim = minitorch.SGD(self.model.parameters(), learning_rate)
+        optim = qstorch.SGD(self.model.parameters(), learning_rate)
         losses = []
         train_accuracy = []
         validation_accuracy = []
@@ -162,10 +162,10 @@ class SentenceSentimentTrain:
             for batch_num, example_num in enumerate(
                 range(0, n_training_samples, batch_size)
             ):
-                y = minitorch.tensor(
+                y = qstorch.tensor(
                     y_train[example_num : example_num + batch_size], backend=BACKEND
                 )
-                x = minitorch.tensor(
+                x = qstorch.tensor(
                     X_train[example_num : example_num + batch_size], backend=BACKEND
                 )
                 x.requires_grad_(True)
@@ -188,11 +188,11 @@ class SentenceSentimentTrain:
             if data_val is not None:
                 (X_val, y_val) = data_val
                 model.eval()
-                y = minitorch.tensor(
+                y = qstorch.tensor(
                     y_val,
                     backend=BACKEND,
                 )
-                x = minitorch.tensor(
+                x = qstorch.tensor(
                     X_val,
                     backend=BACKEND,
                 )

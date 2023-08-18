@@ -2,10 +2,10 @@ import networkx as nx
 import streamlit as st
 from streamlit_ace import st_ace
 
-import minitorch
+import qstorch
 
 MyModule = None
-minitorch
+qstorch
 
 
 def render_module_sandbox():
@@ -19,10 +19,10 @@ def render_module_sandbox():
         language="python",
         height=300,
         value="""
-class MyModule(minitorch.Module):
+class MyModule(qstorch.Module):
     def __init__(self):
         super().__init__()
-        self.parameter1 = minitorch.Parameter(15)
+        self.parameter1 = qstorch.Parameter(15)
 """,
     )
     out = exec(code, globals())

@@ -4,8 +4,8 @@ import pytest
 from hypothesis import given
 from hypothesis.strategies import DrawFn, composite, floats
 
-import minitorch
-from minitorch import (
+import qstorch
+from qstorch import (
     MathTestVariable,
     Scalar,
     central_difference,
@@ -21,7 +21,7 @@ def scalars(
     draw: DrawFn, min_value: float = -100000, max_value: float = 100000
 ) -> Scalar:
     val = draw(floats(min_value=min_value, max_value=max_value))
-    return minitorch.Scalar(val)
+    return qstorch.Scalar(val)
 
 
 small_scalars = scalars(min_value=-100, max_value=100)
@@ -63,7 +63,7 @@ def test_simple(a: float, b: float) -> None:
 
     # Simple relu
     c = Scalar(a).relu() + Scalar(b).relu()
-    assert_close(c.data, minitorch.operators.relu(a) + minitorch.operators.relu(b))
+    assert_close(c.data, qstorch.operators.relu(a) + qstorch.operators.relu(b))
 
     # Add others if you would like...
 
@@ -95,7 +95,7 @@ def test_two_args(
 
 # ## Task 1.4 - Computes checks on each of the derivatives.
 
-# See minitorch.testing for all of the functions checked.
+# See qstorch.testing for all of the functions checked.
 
 
 @given(small_scalars)

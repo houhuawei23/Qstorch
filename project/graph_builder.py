@@ -1,9 +1,9 @@
 import networkx as nx
 
-import minitorch
+import qstorch
 
-if hasattr(minitorch, "Scalar"):
-    Scalar = minitorch.Scalar
+if hasattr(qstorch, "Scalar"):
+    Scalar = qstorch.Scalar
 else:
     Scalar = None
 
@@ -12,9 +12,9 @@ def build_expression(code):
     out = eval(
         code,
         {
-            "x": minitorch.Scalar(1.0, name="x"),
-            "y": minitorch.Scalar(1.0, name="y"),
-            "z": minitorch.Scalar(1.0, name="z"),
+            "x": qstorch.Scalar(1.0, name="x"),
+            "y": qstorch.Scalar(1.0, name="y"),
+            "z": qstorch.Scalar(1.0, name="z"),
         },
     )
     out.name = "out"
@@ -24,9 +24,9 @@ def build_expression(code):
 def build_tensor_expression(code):
 
     variables = {
-        "x": minitorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
-        "y": minitorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
-        "z": minitorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
+        "x": qstorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
+        "y": qstorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
+        "z": qstorch.tensor([[1.0, 2.0, 3.0]], requires_grad=True),
     }
     variables["x"].name = "x"
     variables["y"].name = "y"
@@ -44,7 +44,7 @@ class GraphBuilder:
         self.intermediates = {}
 
     def get_name(self, x):
-        if not isinstance(x, Scalar) and not isinstance(x, minitorch.Tensor):
+        if not isinstance(x, Scalar) and not isinstance(x, qstorch.Tensor):
             return "constant %s" % (x,)
         elif len(x.name) > 15:
             if x.name in self.intermediates:
@@ -78,7 +78,7 @@ class GraphBuilder:
 
                 for input in cur.history.inputs:
                     if not isinstance(input, Scalar) and not isinstance(
-                        input, minitorch.Tensor
+                        input, qstorch.Tensor
                     ):
                         continue
                     queue.append([input])

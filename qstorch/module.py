@@ -3,6 +3,37 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Sequence, Tuple
 
 
+class Parameter:
+    """
+    A Parameter is a special container stored in a `Module`.
+
+    It is designed to hold a `Variable`, but we allow it to hold
+    any value for testing.
+    """
+
+    def __init__(self, x: Any, name: Optional[str] = None) -> None:
+        self.value = x
+        self.name = name
+        if hasattr(x, "requires_grad_"):
+            self.value.requires_grad_(True)
+            if self.name:
+                self.value.name = self.name
+
+    def update(self, x: Any) -> None:
+        """Update the parameter value."""
+        self.value = x
+        if hasattr(x, "requires_grad_"):
+            self.value.requires_grad_(True)
+            if self.name:
+                self.value.name = self.name
+
+    def __repr__(self) -> str:
+        return repr(self.value)
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+
 class Module:
     """
     Modules form a tree that store parameters and other
@@ -25,19 +56,21 @@ class Module:
         self.training = True
 
     def modules(self) -> Sequence[Module]:
-        "Return the direct child modules of this module."
+        """Return the direct child modules of this module."""
         m: Dict[str, Module] = self.__dict__["_modules"]
         return list(m.values())
 
     def train(self) -> None:
-        "Set the mode of this module and all descendent modules to `train`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        """Set the mode of this module and all descendent modules to `train`."""
+        self.training = True
+        for m in self.modules():
+            m.train()
 
     def eval(self) -> None:
-        "Set the mode of this module and all descendent modules to `eval`."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        """Set the mode of this module and all descendent modules to `eval`."""
+        self.training = False
+        for m in self.modules():
+            m.eval()
 
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """
@@ -47,13 +80,21 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        def collect_parameters(module: Module, prefix: str = '') -> Sequence[Tuple[str, Parameter]]:
+            params = []
+            for name, param in module._parameters.items():
+                full_name = prefix + ('.' if prefix else '') + name
+                params.append((full_name, param))
+            for sub_module_name, sub_module in module._modules.items():
+                full_prefix = prefix + ('.' if prefix else '') + sub_module_name
+                params.extend(collect_parameters(sub_module, full_prefix))
+            return params
+
+        return collect_parameters(self)
 
     def parameters(self) -> Sequence[Parameter]:
-        "Enumerate over all the parameters of this module and its descendents."
-        # TODO: Implement for Task 0.4.
-        raise NotImplementedError('Need to implement for Task 0.4')
+        """Enumerate over all the parameters of this module and its descendents."""
+        return list(self._parameters.values())
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
@@ -117,32 +158,4 @@ class Module:
         return main_str
 
 
-class Parameter:
-    """
-    A Parameter is a special container stored in a `Module`.
 
-    It is designed to hold a `Variable`, but we allow it to hold
-    any value for testing.
-    """
-
-    def __init__(self, x: Any, name: Optional[str] = None) -> None:
-        self.value = x
-        self.name = name
-        if hasattr(x, "requires_grad_"):
-            self.value.requires_grad_(True)
-            if self.name:
-                self.value.name = self.name
-
-    def update(self, x: Any) -> None:
-        "Update the parameter value."
-        self.value = x
-        if hasattr(x, "requires_grad_"):
-            self.value.requires_grad_(True)
-            if self.name:
-                self.value.name = self.name
-
-    def __repr__(self) -> str:
-        return repr(self.value)
-
-    def __str__(self) -> str:
-        return str(self.value)

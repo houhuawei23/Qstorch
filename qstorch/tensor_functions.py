@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-import minitorch
+import qstorch
 
 from . import operators
 from .autodiff import Context
@@ -60,8 +60,8 @@ class Function:
         # Create a new variable from the result with a new history.
         back = None
         if need_grad:
-            back = minitorch.History(cls, ctx, vals)
-        return minitorch.Tensor(c._tensor, back, backend=c.backend)
+            back = qstorch.History(cls, ctx, vals)
+        return qstorch.Tensor(c._tensor, back, backend=c.backend)
 
 
 class Neg(Function):
@@ -226,7 +226,7 @@ class View(Function):
         ctx.save_for_backward(a.shape)
         assert a._tensor.is_contiguous(), "Must be contiguous to view"
         shape2 = [int(shape[i]) for i in range(shape.size)]
-        return minitorch.Tensor.make(
+        return qstorch.Tensor.make(
             a._tensor._storage, tuple(shape2), backend=a.backend
         )
 
@@ -234,7 +234,7 @@ class View(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         (original,) = ctx.saved_values
         return (
-            minitorch.Tensor.make(
+            qstorch.Tensor.make(
                 grad_output._tensor._storage, original, backend=grad_output.backend
             ),
             0.0,
@@ -284,7 +284,7 @@ def zeros(shape: UserShape, backend: TensorBackend = SimpleBackend) -> Tensor:
     Returns:
         new tensor
     """
-    return minitorch.Tensor.make(
+    return qstorch.Tensor.make(
         [0] * int(operators.prod(shape)), shape, backend=backend
     )
 
@@ -306,7 +306,7 @@ def rand(
         :class:`Tensor` : new tensor
     """
     vals = [random.random() for _ in range(int(operators.prod(shape)))]
-    tensor = minitorch.Tensor.make(vals, shape, backend=backend)
+    tensor = qstorch.Tensor.make(vals, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
     return tensor
 
@@ -329,7 +329,7 @@ def _tensor(
     Returns:
         new tensor
     """
-    tensor = minitorch.Tensor.make(ls, shape, backend=backend)
+    tensor = qstorch.Tensor.make(ls, shape, backend=backend)
     tensor.requires_grad_(requires_grad)
     return tensor
 

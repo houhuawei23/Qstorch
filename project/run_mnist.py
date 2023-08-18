@@ -2,20 +2,20 @@ import numpy
 import visdom
 from mnist import MNIST
 
-import minitorch
+import qstorch
 
 vis = visdom.Visdom()
 mndata = MNIST("data/")
 images, labels = mndata.load_training()
 
 
-BACKEND = minitorch.make_tensor_functions(minitorch.FastOps)
+BACKEND = qstorch.make_tensor_functions(qstorch.FastOps)
 RATE = 0.01
 HIDDEN = 20
 BATCH = 16
 
 
-class Network(minitorch.Module):
+class Network(qstorch.Module):
     def __init__(self):
         super().__init__()
 
@@ -31,43 +31,43 @@ class Network(minitorch.Module):
         # END ASSIGN2.5
 
 
-class MMLinear(minitorch.Module):
+class MMLinear(qstorch.Module):
     def __init__(self, in_size, out_size):
         super().__init__()
-        r = minitorch.rand((in_size, out_size))
+        r = qstorch.rand((in_size, out_size))
         r.type_(BACKEND)
-        self.weights = minitorch.Parameter(0.1 * (r - 0.5))
-        r = minitorch.rand((out_size,))
+        self.weights = qstorch.Parameter(0.1 * (r - 0.5))
+        r = qstorch.rand((out_size,))
         r.type_(BACKEND)
-        self.bias = minitorch.Parameter(0.1 * (r - 0.5))
+        self.bias = qstorch.Parameter(0.1 * (r - 0.5))
         self.out_size = out_size
 
     def forward(self, x):
         # ASSIGN3.5
         batch, in_size = x.shape
-        return minitorch.matmul(
+        return qstorch.matmul(
             x.view(batch, 1, in_size),
             self.weights.value.view(1, in_size, self.out_size),
         ).view(batch, self.out_size) + self.bias.value.view(1, self.out_size)
         # END ASSIGN3.5
 
 
-class Conv2d(minitorch.Module):
+class Conv2d(qstorch.Module):
     def __init__(self, in_channels, out_channels, kh, kw):
         super().__init__()
-        r = minitorch.rand((out_channels, in_channels, kh, kw))
+        r = qstorch.rand((out_channels, in_channels, kh, kw))
         r.type_(BACKEND)
-        self.weights = minitorch.Parameter(0.1 * (r - 0.5))
-        r = minitorch.rand((out_channels, 1, 1))
+        self.weights = qstorch.Parameter(0.1 * (r - 0.5))
+        r = qstorch.rand((out_channels, 1, 1))
         r.type_(BACKEND)
-        self.bias = minitorch.Parameter(0.1 * (r - 0.5))
+        self.bias = qstorch.Parameter(0.1 * (r - 0.5))
 
     def forward(self, input):
-        out = minitorch.Conv2dFun.apply(input, self.weights.value) + self.bias.value
+        out = qstorch.Conv2dFun.apply(input, self.weights.value) + self.bias.value
         return out
 
 
-class Network2(minitorch.Module):
+class Network2(qstorch.Module):
     def __init__(self):
         super().__init__()
         self.conv1 = Conv2d(1, 4, 3, 3)
@@ -84,7 +84,7 @@ class Network2(minitorch.Module):
         self.mid = x
         x = self.conv2(x).relu()
         self.out = x
-        x = minitorch.avgpool2d(x, (4, 4))
+        x = qstorch.avgpool2d(x, (4, 4))
         x = self.linear1(x.view(BATCH, 392)).relu()
         x = self.linear2(x).sigmoid()
         return x
@@ -118,8 +118,8 @@ for epoch in range(250):
     for i, j in enumerate(range(0, len(ys), BATCH)):
         if len(ys) - j <= BATCH:
             continue
-        y = minitorch.tensor(ys[j : j + BATCH], (BATCH,))
-        x = minitorch.tensor(X[cur : cur + 28 * 28 * BATCH], (BATCH, 28 * 28))
+        y = qstorch.tensor(ys[j: j + BATCH], (BATCH,))
+        x = qstorch.tensor(X[cur: cur + 28 * 28 * BATCH], (BATCH, 28 * 28))
         x.requires_grad_(True)
         y.requires_grad_(True)
         y.type_(BACKEND)
@@ -138,8 +138,8 @@ for epoch in range(250):
                 p.update(p.value - RATE * (p.value.grad / float(BATCH)))
         if i % 10 == 0:
             correct = 0
-            y = minitorch.tensor(val_ys[:BATCH], (BATCH,))
-            x = minitorch.tensor(val_x[: (BATCH * 28 * 28)], (BATCH, 28 * 28))
+            y = qstorch.tensor(val_ys[:BATCH], (BATCH,))
+            x = qstorch.tensor(val_x[: (BATCH * 28 * 28)], (BATCH, 28 * 28))
             out = model.forward(x.view(BATCH, 1, 28, 28)).view(BATCH)
             for i in range(BATCH):
                 if y[i] == 1 and out[i] > 0.5:
@@ -161,7 +161,7 @@ for epoch in range(250):
 
             print("Epoch ", epoch, " loss ", total_loss, "correct", correct)
             # im = f"Epoch: {epoch}"
-            # data.graph(im, lambda x: model.forward(minitorch.tensor(x, (1, 2)))[0, 0])
+            # data.graph(im, lambda x: model.forward(qstorch.tensor(x, (1, 2)))[0, 0])
             # plt.plot(losses, c="blue")
             # vis.matplot(plt, win="loss")
             total_loss = 0.0

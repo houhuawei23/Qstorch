@@ -2,12 +2,12 @@ import random
 
 import numba
 
-import minitorch
+import qstorch
 
-datasets = minitorch.datasets
-FastTensorBackend = minitorch.TensorBackend(minitorch.FastOps)
+datasets = qstorch.datasets
+FastTensorBackend = qstorch.TensorBackend(qstorch.FastOps)
 if numba.cuda.is_available():
-    GPUBackend = minitorch.TensorBackend(minitorch.CudaOps)
+    GPUBackend = qstorch.TensorBackend(qstorch.CudaOps)
 
 
 def default_log_fn(epoch, total_loss, correct, losses):
@@ -15,11 +15,11 @@ def default_log_fn(epoch, total_loss, correct, losses):
 
 
 def RParam(*shape, backend):
-    r = minitorch.rand(shape, backend=backend) - 0.5
-    return minitorch.Parameter(r)
+    r = qstorch.rand(shape, backend=backend) - 0.5
+    return qstorch.Parameter(r)
 
 
-class Network(minitorch.Module):
+class Network(qstorch.Module):
     def __init__(self, hidden, backend):
         super().__init__()
 
@@ -36,13 +36,13 @@ class Network(minitorch.Module):
         # END ASSIGN3.5
 
 
-class Linear(minitorch.Module):
+class Linear(qstorch.Module):
     def __init__(self, in_size, out_size, backend):
         super().__init__()
         self.weights = RParam(in_size, out_size, backend=backend)
-        s = minitorch.zeros((out_size,), backend=backend)
+        s = qstorch.zeros((out_size,), backend=backend)
         s = s + 0.1
-        self.bias = minitorch.Parameter(s)
+        self.bias = qstorch.Parameter(s)
         self.out_size = out_size
 
     def forward(self, x):
@@ -59,15 +59,15 @@ class FastTrain:
         self.backend = backend
 
     def run_one(self, x):
-        return self.model.forward(minitorch.tensor([x], backend=self.backend))
+        return self.model.forward(qstorch.tensor([x], backend=self.backend))
 
     def run_many(self, X):
-        return self.model.forward(minitorch.tensor(X, backend=self.backend))
+        return self.model.forward(qstorch.tensor(X, backend=self.backend))
 
     def train(self, data, learning_rate, max_epochs=500, log_fn=default_log_fn):
 
         self.model = Network(self.hidden_layers, self.backend)
-        optim = minitorch.SGD(self.model.parameters(), learning_rate)
+        optim = qstorch.SGD(self.model.parameters(), learning_rate)
         BATCH = 10
         losses = []
 
@@ -79,8 +79,8 @@ class FastTrain:
 
             for i in range(0, len(X_shuf), BATCH):
                 optim.zero_grad()
-                X = minitorch.tensor(X_shuf[i : i + BATCH], backend=self.backend)
-                y = minitorch.tensor(y_shuf[i : i + BATCH], backend=self.backend)
+                X = qstorch.tensor(X_shuf[i: i + BATCH], backend=self.backend)
+                y = qstorch.tensor(y_shuf[i: i + BATCH], backend=self.backend)
                 # Forward
 
                 out = self.model.forward(X).view(y.shape[0])
@@ -96,10 +96,10 @@ class FastTrain:
             losses.append(total_loss)
             # Logging
             if epoch % 10 == 0 or epoch == max_epochs:
-                X = minitorch.tensor(data.X, backend=self.backend)
-                y = minitorch.tensor(data.y, backend=self.backend)
+                X = qstorch.tensor(data.X, backend=self.backend)
+                y = qstorch.tensor(data.y, backend=self.backend)
                 out = self.model.forward(X).view(y.shape[0])
-                y2 = minitorch.tensor(data.y)
+                y2 = qstorch.tensor(data.y)
                 correct = int(((out.detach() > 0.5) == y2).sum()[0])
                 log_fn(epoch, total_loss, correct, losses)
 
@@ -120,11 +120,11 @@ if __name__ == "__main__":
     PTS = args.PTS
 
     if args.DATASET == "xor":
-        data = minitorch.datasets["Xor"](PTS)
+        data = qstorch.datasets["Xor"](PTS)
     elif args.DATASET == "simple":
-        data = minitorch.datasets["Simple"].simple(PTS)
+        data = qstorch.datasets["Simple"].simple(PTS)
     elif args.DATASET == "split":
-        data = minitorch.datasets["Split"](PTS)
+        data = qstorch.datasets["Split"](PTS)
 
     HIDDEN = int(args.HIDDEN)
     RATE = args.RATE

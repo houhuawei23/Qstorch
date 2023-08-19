@@ -105,7 +105,17 @@ def sigmoid_back(x: float, d: float) -> float:
     """
     return d * sigmoid(x) * (1 - sigmoid(x))
 
+def mul_back(x: float, y: float, d: float) -> float:
+    r"""
+    \frac{\partial xy}{\partial x} = y, \frac{\partial xy}{\partial y} = x
+    """
+    return d * y, d * x
 
+def neg_back(d: float) -> float:
+    return -1.0*d
+
+def exp_back(a: float, d: float) -> float:
+    return np.exp(a)*d
 
 def map(fn: Callable[[float], float]) -> Callable[[Iterable[float]], Iterable[float]]:
     """

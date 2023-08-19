@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Tuple
-
+import numpy as np
 from typing_extensions import Protocol
 
 # ## Task 1.1
 # Central Difference calculation
 
 
-def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) -> Any:
+def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-5) -> Any:
     r"""
     Computes an approximation to the derivative of `f` with respect to one arg.
 
@@ -27,8 +27,11 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
 
     if arg >= len(vals):
         raise ValueError("The provided 'arg' index is out of range.")
-    h1 = f(vals[arg]+epsilon/2)
-    h2 = f(vals[arg]-epsilon/2)
+    vals = list(vals)
+    vals[arg] = vals[arg] + epsilon/2
+    h1 = f(*vals)
+    vals[arg] = vals[arg] - epsilon
+    h2 = f(*vals)
     return (h1 - h2) / epsilon
 
 
@@ -67,8 +70,24 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    visited = [int]
+    queue = [Variable]
+    def dfs(v: Variable) -> None:
+        if v.is_constant():
+            return
+        if v.unique_id in visited:
+            return
+        if not v.is_leaf():
+            for p in v.parents:
+                dfs(p)
+        visited.append(v.unique_id)
+        queue.insert(0, v)
+    dfs(variable)
+    return queue
+
+
+# def forwardpropagate(variable: Variable) -> Any:
+#     pass
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -82,8 +101,24 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
 
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
-    # TODO: Implement for Task 1.4.
-    raise NotImplementedError('Need to implement for Task 1.4')
+    topo = topological_sort(variable)
+    nodes_deriv = {variable.unique_id: deriv}
+    for v in topo:
+        if v.is_leaf():
+            continue
+        if v.unique_id in nodes_deriv.keys():
+            deriv = nodes_deriv[v.unique_id]
+        back_deriv = v.chain_rule(deriv)
+        for inputs, grad in back_deriv:
+            if inputs.is_leaf():
+                inputs.accumulate_derivative(grad)
+                continue
+            if inputs.unique_id not in nodes_deriv.keys():
+                nodes_deriv[inputs.unique_id] = grad
+            else:
+                nodes_deriv[inputs.unique_id] += grad
+
+
 
 
 @dataclass

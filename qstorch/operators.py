@@ -41,7 +41,7 @@ def max(x: float, y: float) -> float:
     return x if x > y else y
 
 
-def is_close(x: float, y: float, epsilon: float = 1e-2) -> float:
+def is_close(x: float, y: float, epsilon: float = 1e-5) -> float:
     """$f(x) = |x - y| < 1e-2$"""
     return 1.0 if np.abs(x - y) < epsilon else 0.0
 

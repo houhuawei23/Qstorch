@@ -75,7 +75,8 @@ one_arg, two_arg, _ = MathTestVariable._comp_testing()
 @pytest.mark.task1_2
 @pytest.mark.parametrize("fn", one_arg)
 def test_one_args(
-    fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], t1: Scalar
+    fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], 
+    t1: Scalar
 ) -> None:
     name, base_fn, scalar_fn = fn
     assert_close(scalar_fn(t1).data, base_fn(t1.data))
@@ -102,7 +103,8 @@ def test_two_args(
 @pytest.mark.task1_4
 @pytest.mark.parametrize("fn", one_arg)
 def test_one_derivative(
-    fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], t1: Scalar
+    fn: Tuple[str, Callable[[float], float], Callable[[Scalar], Scalar]], 
+    t1: Scalar
 ) -> None:
     name, _, scalar_fn = fn
     derivative_check(scalar_fn, t1)

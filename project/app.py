@@ -18,10 +18,8 @@ hide_function_defs = args.hide_function_defs
 st.set_page_config(page_title="interactive qstorch")
 st.sidebar.markdown(
     """
-<h1 style="font-size:30pt; float: left; margin-right: 20px; margin-top: 1px;">MiniTorch</h1>{}
-""".format(
-        get_img_tag("https://minitorch.github.io/_images/match.png", width="40")
-    ),
+<h1 style="font-size:30pt; float: left; margin-right: 20px; margin-top: 1px;">QsTorch</h1>
+""",
     unsafe_allow_html=True,
 )
 

@@ -163,8 +163,11 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        # TODO: Implement for Task 1.3.
-        raise NotImplementedError('Need to implement for Task 1.3')
+        # Get the gradient of the last function
+        grad = h.last_fn._backward(h.ctx, d_output)
+        # Return a tuple of the input and the gradient
+        return zip(h.inputs, grad)
+        
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """

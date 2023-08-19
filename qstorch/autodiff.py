@@ -70,8 +70,8 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     Returns:
         Non-constant Variables in topological order starting from the right.
     """
-    visited = [int]
-    queue = [Variable]
+    visited: [int] = []
+    queue: [Variable] = []
     def dfs(v: Variable) -> None:
         if v.is_constant():
             return
@@ -84,11 +84,6 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
         queue.insert(0, v)
     dfs(variable)
     return queue
-
-
-# def forwardpropagate(variable: Variable) -> Any:
-#     pass
-
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
     """

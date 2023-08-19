@@ -65,7 +65,10 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
 
 
 def broadcast_index(
-    big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
+    big_index: Index, 
+    big_shape: Shape, 
+    shape: Shape, 
+    out_index: OutIndex
 ) -> None:
     """
     Convert a `big_index` into `big_shape` to a smaller `out_index`
@@ -84,7 +87,22 @@ def broadcast_index(
         None
     """
     # TODO: Implement for Task 2.2.
-    raise NotImplementedError('Need to implement for Task 2.2')
+    # Reverse the shapes and indices for processing (from right to left)
+    big_shape_reversed = big_shape[::-1]
+    shape_reversed = shape[::-1]
+    big_index_reversed = big_index[::-1]
+    
+    # Process each dimension of the shapes
+    j = 0  # pointer for the smaller shape
+    for i in range(len(big_shape_reversed)):
+        if j < len(shape_reversed) and big_shape_reversed[i] == shape_reversed[j]:
+            # out_index_list.append(big_index_reversed[i])
+            out_index[j] = big_index_reversed[i]
+            j += 1
+        elif big_shape_reversed[i] == 1:
+            continue
+        else:
+            raise IndexingError('Cannot broadcast')
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -102,7 +120,21 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
     """
     # TODO: Implement for Task 2.2.
-    raise NotImplementedError('Need to implement for Task 2.2')
+    # Step 1: Pad shapes with ones on the leading side to make them of the same length
+    diff_dims = len(shape1) - len(shape2)
+    if diff_dims > 0:
+        shape2 = (1,) * diff_dims + tuple(shape2)
+    else:
+        shape1 = (1,) * (-diff_dims) + tuple(shape1)
+    
+    # Step 2, 3, and 4: Compute the broadcasted shape
+    broadcasted_shape = []
+    for dim1, dim2 in zip(shape1, shape2):
+        if dim1 != dim2 and dim1 != 1 and dim2 != 1:
+            raise IndexingError('Cannot broadcast')
+        broadcasted_shape.append(max(dim1, dim2))
+    
+    return tuple(broadcasted_shape)
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:

@@ -25,6 +25,9 @@ class MapProto(Protocol):
 
 
 class TensorOps:
+    """
+    A collection of tensor operations that can be used to implement
+    """
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
         pass

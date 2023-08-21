@@ -264,8 +264,13 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        out_index = np.array(out_shape)
+        in_index = np.array(in_shape)
+        for i in range(out_shape.size):
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            data = in_storage[index_to_position(in_index, in_strides)]
+            out[index_to_position(out_index, out_strides)] = fn(data)
 
     return _map
 
@@ -309,8 +314,18 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        ain_index = np.array(a_shape)
+        aout_index = np.array(out_shape)
+        bin_index = np.array(b_shape)
+        bout_index = np.array(out_shape)
+        for i in range(out.size):
+            to_index(i, a_shape, ain_index)
+            broadcast_index(aout_index, out_shape, a_shape, ain_index)
+            broadcast_index(bout_index, out_shape, b_shape, bin_index)
+            apos = index_to_position(ain_index, a_strides)
+            bpos = index_to_position(bin_index, b_strides)
+            data = fn(a_storage[apos], b_storage[bpos])
+            out[index_to_position(bout_index, out_strides)] = data
 
     return _zip
 
@@ -340,8 +355,15 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        # TODO: Implement for Task 2.3.
-        raise NotImplementedError('Need to implement for Task 2.3')
+        out_index = np.array(out_shape)
+        for i in range(out.size):
+            to_index(i, out_shape, out_index)
+            pos = index_to_position(out_index, out_strides)
+            for j in range(a_shape[reduce_dim]):
+                a_index = out_index.copy()
+                a_index[reduce_dim] = j
+                apos = index_to_position(a_index, a_strides)
+                out[pos] = fn(out[pos], a_storage[apos])
 
     return _reduce
 

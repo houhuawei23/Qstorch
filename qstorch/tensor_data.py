@@ -101,21 +101,26 @@ def broadcast_index(
     """
     # TODO: Implement for Task 2.2.
     # Reverse the shapes and indices for processing (from right to left)
-    big_shape_reversed = big_shape[::-1]
-    shape_reversed = shape[::-1]
-    big_index_reversed = big_index[::-1]
+    # big_shape_reversed = big_shape[::-1]
+    # shape_reversed = shape[::-1]
+    # big_index_reversed = big_index[::-1]
     
-    # Process each dimension of the shapes
-    j = 0  # pointer for the smaller shape
-    for i in range(len(big_shape_reversed)):
-        if j < len(shape_reversed) and big_shape_reversed[i] == shape_reversed[j]:
-            # out_index_list.append(big_index_reversed[i])
-            out_index[j] = big_index_reversed[i]
-            j += 1
-        elif big_shape_reversed[i] == 1:
-            continue
-        else:
-            raise IndexingError('Cannot broadcast')
+    # # Process each dimension of the shapes
+    # j = 0  # pointer for the smaller shape
+    # for i in range(len(big_shape_reversed)):
+    #     if j < len(shape_reversed) and big_shape_reversed[i] == shape_reversed[j]:
+    #         # out_index_list.append(big_index_reversed[i])
+    #         out_index[j] = big_index_reversed[i]
+    #         j += 1
+    #     elif big_shape_reversed[i] == 1:
+    #         continue
+    #     else:
+    #         raise IndexingError('Cannot broadcast')
+    for i in range(shape.size):
+        offset = i + big_shape.size - shape.size
+        if offset < 0:
+            raise IndexingError("offset must be greater ot equal than zero!")
+        out_index[i] = big_index[offset] if shape[i] != 1 else 0
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:

@@ -25,6 +25,9 @@ class MapProto(Protocol):
 
 
 class TensorOps:
+    """
+    A collection of tensor operations that can be used to implement
+    """
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
         pass
@@ -314,18 +317,25 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        ain_index = np.array(a_shape)
-        aout_index = np.array(out_shape)
+        ain_index = np.array(a_shape) # TODO: fix this
+        aout_index = np.array(out_shape) 
         bin_index = np.array(b_shape)
         bout_index = np.array(out_shape)
+        c_index = np.array(out_shape)
         for i in range(out.size):
             to_index(i, a_shape, ain_index)
-            broadcast_index(aout_index, out_shape, a_shape, ain_index)
-            broadcast_index(bout_index, out_shape, b_shape, bin_index)
-            apos = index_to_position(ain_index, a_strides)
-            bpos = index_to_position(bin_index, b_strides)
+            to_index(i, b_shape, bin_index)
+            to_index(i, out_shape, c_index)
+            broadcast_index(ain_index, out_shape, a_shape, aout_index)
+            broadcast_index(bin_index, out_shape, b_shape, bout_index)
+            apos = index_to_position(aout_index, a_strides)
+            bpos = index_to_position(bout_index, b_strides)
             data = fn(a_storage[apos], b_storage[bpos])
-            out[index_to_position(bout_index, out_strides)] = data
+            t = index_to_position(c_index, out_strides)
+            out[t] = data
+
+        # for i in range(out.size):
+        #     to_index(i, a_shape, ain_index)
 
     return _zip
 

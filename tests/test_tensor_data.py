@@ -19,13 +19,13 @@ def test_layout() -> None:
     tensor_data = qstorch.TensorData(data, (3, 5), (5, 1))
 
     assert tensor_data.is_contiguous()
-    assert tensor_data.shape == (3, 5)
-    assert tensor_data.index((1, 0)) == 5
-    assert tensor_data.index((1, 2)) == 7
+    assert tensor_data.shape == (3, 5)     # strides = (5, 1)
+    assert tensor_data.index((1, 0)) == 5  # 1 * 5 + 0 * 1 = 5
+    assert tensor_data.index((1, 2)) == 7  # 1 * 5 + 2 * 1 = 7
 
     tensor_data = qstorch.TensorData(data, (5, 3), (1, 5))
     assert tensor_data.shape == (5, 3)
-    assert not tensor_data.is_contiguous()
+    assert not tensor_data.is_contiguous() # strides = (1, 5), outer dims have smaller strides
 
     data = [0] * 4 * 2 * 2
     tensor_data = qstorch.TensorData(data, (4, 2, 2))
@@ -36,7 +36,7 @@ def test_layout() -> None:
 def test_layout_bad() -> None:
     "Test basis properties of layout and strides"
     data = [0] * 3 * 5
-    qstorch.TensorData(data, (3, 5), (6,))
+    qstorch.TensorData(data, (3, 5), (6,)) # error, strides must be of same length as shape
 
 
 @pytest.mark.task2_1
@@ -68,25 +68,29 @@ def test_index(tensor_data: TensorData) -> None:
 
     base = [0] * tensor_data.dims
     with pytest.raises(qstorch.IndexingError):
-        base[0] = -1
+        base[0] = -1 # negative index
         tensor_data.index(tuple(base))
 
     if tensor_data.dims > 1:
         with pytest.raises(qstorch.IndexingError):
-            base = [0] * (tensor_data.dims - 1)
+            base = [0] * (tensor_data.dims - 1) # too few indices
             tensor_data.index(tuple(base))
 
 
 @pytest.mark.task2_1
 @given(data())
 def test_permute(data: DataObject) -> None:
+    """
+    Test that permutation of tensor_data is correct.
+    """
     td = data.draw(tensor_data())
     ind = data.draw(indices(td))
-    td_rev = td.permute(*list(reversed(range(td.dims))))
-    assert td.index(ind) == td_rev.index(tuple(reversed(ind)))
-
-    td2 = td_rev.permute(*list(reversed(range(td_rev.dims))))
-    assert td.index(ind) == td2.index(ind)
+    td_rev = td.permute(*list(reversed(range(td.dims)))) # reverse the order of dims
+    # the index of reversed ind on reversed tensor_data should be the same as original
+    assert td.index(ind) == td_rev.index(tuple(reversed(ind))) 
+    # reverse the order of dims again, should be the same as original
+    td2 = td_rev.permute(*list(reversed(range(td_rev.dims)))) 
+    assert td.index(ind) == td2.index(ind) 
 
 
 # ## Tasks 2.2
@@ -96,27 +100,29 @@ def test_permute(data: DataObject) -> None:
 
 @pytest.mark.task2_2
 def test_shape_broadcast() -> None:
-    c = qstorch.shape_broadcast((1,), (5, 5))
+    c = qstorch.shape_broadcast((1,), (5, 5)) # (1,) -> (1, 1) -> (5, 5)
     assert c == (5, 5)
 
-    c = qstorch.shape_broadcast((5, 5), (1,))
+    c = qstorch.shape_broadcast((5, 5), (1,)) # (1,) -> (1, 1) -> (5, 5)
     assert c == (5, 5)
 
-    c = qstorch.shape_broadcast((1, 5, 5), (5, 5))
+    c = qstorch.shape_broadcast((1, 5, 5), (5, 5)) # (5, 5) -> (1, 5, 5)
     assert c == (1, 5, 5)
 
-    c = qstorch.shape_broadcast((5, 1, 5, 1), (1, 5, 1, 5))
+    c = qstorch.shape_broadcast((5, 1, 5, 1), (1, 5, 1, 5)) 
     assert c == (5, 5, 5, 5)
 
     with pytest.raises(qstorch.IndexingError):
-        c = qstorch.shape_broadcast((5, 7, 5, 1), (1, 5, 1, 5))
+        # 7 and 5 are not compatible
+        c = qstorch.shape_broadcast((5, 7, 5, 1), (1, 5, 1, 5)) 
         print(c)
 
     with pytest.raises(qstorch.IndexingError):
-        c = qstorch.shape_broadcast((5, 2), (5,))
+        # (5, 2) and (1, 5), 2 and 5 are not compatible
+        c = qstorch.shape_broadcast((5, 2), (5,)) 
         print(c)
 
-    c = qstorch.shape_broadcast((2, 5), (5,))
+    c = qstorch.shape_broadcast((2, 5), (5,)) # (5,) -> (1, 5) -> (2, 5)
     assert c == (2, 5)
 
 

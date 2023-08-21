@@ -47,9 +47,13 @@ def index_to_position(index: Index, strides: Strides) -> int:
         4
     """
     # assert len(index) == len(strides)
+    # sum = 0
+    # for i in range(index.size):
+    #     sum += index[i]*strides[i]
+    # return sum
     sum = 0
-    for i in range(index.size):
-        sum += index[i]*strides[i]
+    for i, v in enumerate(index):
+        sum += v * strides[i]
     return sum
     # return sum(map(lambda x: x[0]*x[1], zip(index, strides)))
     # return np.inner(index, strides)

@@ -41,10 +41,18 @@ def index_to_position(index: Index, strides: Strides) -> int:
 
     Returns:
         Position in storage
+    
+    Examples:
+        >>> index_to_position((1, 2), (2, 1))
+        4
     """
     # assert len(index) == len(strides)
     # return sum(map(lambda x: x[0]*x[1], zip(index, strides)))
-    return np.inner(index, strides)
+    # return np.inner(index, strides)
+    sum = 0
+    for i in range(index.size):
+        sum += index[i] * strides[i]
+    return sum
     
 
 
@@ -59,6 +67,12 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         ordinal: ordinal position to convert.
         shape : tensor shape.
         out_index : return index corresponding to position.
+    
+    Examples:
+        >>> shape = np.array([2, 3]), out_index = np.zeros(2)
+        >>> to_index(5, shape, out_index)
+        >>> out_index
+        array([1, 2])
 
     """
     for i in range(len(shape) - 1, -1, -1):
@@ -182,6 +196,7 @@ class TensorData:
             raise IndexingError(f"Len of strides {strides} must match {shape}.")
         self._strides = array(strides)
         self._shape = array(shape)
+        
         self.strides = strides
         self.dims = len(strides)
         self.size = int(prod(shape))
@@ -211,6 +226,14 @@ class TensorData:
         return shape_broadcast(shape_a, shape_b)
 
     def index(self, index: Union[int, UserIndex]) -> int:
+        """
+        Convert a multidimensional index into a position in the storage.
+
+        Example:
+            >>> x = TensorData([1, 2, 3, 4], (2, 2))
+            >>> x.index((1, 0))
+            2
+        """
         if isinstance(index, int):
             aindex: Index = array([index])
         if isinstance(index, tuple):
@@ -224,6 +247,7 @@ class TensorData:
         # Check for errors
         if aindex.shape[0] != len(self.shape):
             raise IndexingError(f"Index {aindex} must be size of {self.shape}.")
+        
         for i, ind in enumerate(aindex):
             if ind >= self.shape[i]:
                 raise IndexingError(f"Index {aindex} out of range {self.shape}.")
@@ -234,6 +258,9 @@ class TensorData:
         return index_to_position(array(index), self._strides)
 
     def indices(self) -> Iterable[UserIndex]:
+        """
+        Iterate over all indices (i, j) of the tensor.
+        """
         lshape: Shape = array(self.shape)
         out_index: Index = array(self.shape)
         for i in range(self.size):

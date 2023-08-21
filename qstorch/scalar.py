@@ -158,6 +158,9 @@ class Scalar:
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """
+        Returns the gradient of this variable with respect to all of its parents.
+        """
         h = self.history
         assert h is not None
         assert h.last_fn is not None

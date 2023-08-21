@@ -87,7 +87,7 @@ class Tensor:
         assert backend is not None
         self._tensor = v
         self.history = back
-        self.backend = backend
+        self.backend = backend # backend of the tensor
         self.grad = None
         if name is not None:
             self.name = name

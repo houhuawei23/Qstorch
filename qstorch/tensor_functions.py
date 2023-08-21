@@ -31,6 +31,10 @@ def wrap_tuple(x):  # type: ignore
 
 # Constructors
 class Function:
+    """
+    A wrapper for a mathematical function that processes and produces
+    Tensor variables.
+    """
     @classmethod
     def _backward(cls, ctx: Context, grad_out: Tensor) -> Tuple[Tensor, ...]:
         return wrap_tuple(cls.backward(ctx, grad_out))  # type: ignore
@@ -105,8 +109,7 @@ class Mul(Function):
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         # TODO: Implement for Task 2.4.
-        raise NotImplementedError('Need to implement for Task 2.4')
-
+        raise NotImplementedError('Need to implement for Task 2.3')
 
 class Sigmoid(Function):
     @staticmethod

@@ -32,6 +32,8 @@ def wrap_tuple(x):  # type: ignore
 # backend = TensorBackend()
 
 # Constructors
+
+
 class Function:
     """
     A wrapper for a mathematical function that processes and produces Tensor variables.
@@ -56,119 +58,122 @@ class Function:
 
         # Create the context.
         ctx = Context(not need_grad)
-
         # Call forward with the variables.
         c = cls._forward(ctx, *raw_vals)
-        # assert isinstance(c, Tensor), "Expected return type Tensor got %s" % (
-        #     type(c)
-        # )
 
         # Create a new variable from the result with a new history.
         back = None
         if need_grad:
-            back = qstorch.History(cls, ctx, vals)
+            back = qstorch.History(cls, ctx, vals)  # h.inputs
         return qstorch.Tensor(c._tensor, back, backend=c.backend)
 
 
 class Neg(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
-        return t1.f.neg_map(t1)
+        return t1.backend.neg_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-        return grad_output.f.neg_map(grad_output)
+        return grad_output.backend.neg_map(grad_output)
 
 
 class Inv(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
         ctx.save_for_backward(t1)
-        return t1.f.inv_map(t1)
+        return t1.backend.inv_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         (t1,) = ctx.saved_values
-        return grad_output.f.inv_back_zip(t1, grad_output)
+        return grad_output.backend.inv_back_zip(t1, grad_output)
 
 
 class Add(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
-        return t1.f.add_zip(t1, t2)
+        ctx.save_for_backward(t1, t2)
+        return t1.backend.add_zip(t1, t2)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        return grad_output, grad_output
+        (t1, t2) = ctx.saved_values
+        grad_1 = t1.expand(grad_output)  # TODO: figure out why this is needed
+        grad_2 = t2.expand(grad_output)
+        return grad_1, grad_2
 
 
 class Mul(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
         ctx.save_for_backward(a, b)
-        return a.f.mul_zip(a, b)
-    
+        return a.backend.mul_zip(a, b)
+
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         a, b = ctx.saved_values
-        return grad_output.f.mul_zip(grad_output, b), grad_output.f.mul_zip(grad_output, a)
-    
+        return grad_output.backend.mul_zip(grad_output, b), grad_output.backend.mul_zip(grad_output, a)
+
 
 class Sigmoid(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
-        b = t1.f.sigmoid_map(t1)
+        b = t1.backend.sigmoid_map(t1)
         ctx.save_for_backward(b)
         return b
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         (b,) = ctx.saved_values
-        return grad_output.f.mul_zip(grad_output, grad_output.f.mul_zip(b, grad_output.f.add_zip(tensor([1.0]), grad_output.f.neg_map(b))))
-        
+        tmp0 = grad_output.backend.add_zip(tensor([1.0]), grad_output.backend.neg_map(b))
+        tmp1 = grad_output.backend.mul_zip(b, tmp0)
+        tmp2 = grad_output.backend.mul_zip(tmp1, grad_output)
+        return tmp2
+
 
 class ReLU(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
         ctx.save_for_backward(t1)
-        return t1.f.relu_map(t1)
-    
+        return t1.backend.relu_map(t1)
+
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         (a,) = ctx.saved_values
-        return grad_output.f.relu_back_zip(a, grad_output)
+        return grad_output.backend.relu_back_zip(a, grad_output)
 
 
 class Log(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
         ctx.save_for_backward(t1)
-        return t1.f.log_map(t1)
-    
+        return t1.backend.log_map(t1)
+
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         (a,) = ctx.saved_values
-        return grad_output.f.log_back_zip(a, grad_output)
+        return grad_output.backend.log_back_zip(a, grad_output)
 
 
 class Exp(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
-        a = t1.f.exp_map(t1)
+        a = t1.backend.exp_map(t1)
         ctx.save_for_backward(a)
         return a
-    
+
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         (a,) = ctx.saved_values
-        return grad_output.f.mul_zip(grad_output, a)
+        return grad_output.backend.mul_zip(grad_output, a)
 
 
 class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         ctx.save_for_backward(a.shape, dim)
-        return a.f.add_reduce(a, int(dim.item()))
+        return a.backend.add_reduce(a, int(dim.item()))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
@@ -180,16 +185,16 @@ class All(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         if dim is not None:
-            return a.f.mul_reduce(a, int(dim.item()))
+            return a.backend.mul_reduce(a, int(dim.item()))
         else:
-            return a.f.mul_reduce(a.contiguous().view(int(operators.prod(a.shape))), 0)
+            return a.backend.mul_reduce(a.contiguous().view(int(operators.prod(a.shape))), 0)
 
 
 class LT(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
         ctx.save_for_backward(a, b)
-        return a.f.lt_zip(a, b)
+        return a.backend.lt_zip(a, b)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
@@ -201,8 +206,8 @@ class EQ(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
         ctx.save_for_backward(a, b)
-        return a.f.eq_zip(a, b)
-    
+        return a.backend.eq_zip(a, b)
+
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         a, b = ctx.saved_values
@@ -212,24 +217,30 @@ class EQ(Function):
 class IsClose(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
-        return a.f.is_close_zip(a, b)
+        return a.backend.is_close_zip(a, b)
+
 
 class Permute(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
         ctx.save_for_backward(order)
-        b = qstorch.Tensor.make(a._tensor._storage, a.shape, backend=a.backend)
-        return qstorch.Tensor(b._tensor.permute(*order), backend=b.backend)
+        order_ls = []
+        for i in range(order.shape[0]):
+            order_ls.append(int(order[i]))
+
+        return qstorch.Tensor(a._tensor.permute(*order_ls), backend=a.backend)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
-        # (order,) = ctx.saved_values
-        # r_order = np.array(order)
-        # for i, v in enumerate(r_order):
-        #     r_order[v] = i
-        # return qstorch.Tensor(grad_output._tensor.permute(*r_order), backend=grad_output.backend)
-        r_order = ctx.saved_values
-        return Tensor(grad_output._tensor.permute(*r_order), backend=grad_output.backend)
+        order, = ctx.saved_values
+        order_ls = []
+        for i in range(order.shape[0]):
+            order_ls.append(int(order[i]))
+        # Compute the inverse of the order
+        inverse_order = [order_ls.index(i) for i in range(len(order_ls))]
+        # Permute the grad_output using the inverse order
+        grad_input = grad_output.permute(*inverse_order)
+        return grad_input, 0.0  # don't need to backpropagate on order
 
 
 class View(Function):
@@ -256,7 +267,7 @@ class View(Function):
 class Copy(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor) -> Tensor:
-        return a.f.id_map(a)
+        return a.backend.id_map(a)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
@@ -267,7 +278,7 @@ class MatMul(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
         ctx.save_for_backward(t1, t2)
-        return t1.f.matrix_multiply(t1, t2)
+        return t1.backend.matrix_multiply(t1, t2)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
@@ -279,8 +290,8 @@ class MatMul(Function):
             return a._new(a._tensor.permute(*order))
 
         return (
-            grad_output.f.matrix_multiply(grad_output, transpose(t2)),
-            grad_output.f.matrix_multiply(transpose(t1), grad_output),
+            grad_output.backend.matrix_multiply(grad_output, transpose(t2)),
+            grad_output.backend.matrix_multiply(transpose(t1), grad_output),
         )
 
 
@@ -347,8 +358,8 @@ def _tensor(
 
 
 def tensor(
-    ls: Any, 
-    backend: TensorBackend = SimpleBackend, 
+    ls: Any,
+    backend: TensorBackend = SimpleBackend,
     requires_grad: bool = False
 ) -> Tensor:
     """

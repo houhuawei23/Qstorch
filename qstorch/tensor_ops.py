@@ -236,8 +236,8 @@ class SimpleOps(TensorOps):
 def tensor_map(
     fn: Callable[[float], float]
 ) -> Callable[
-    [Storage, Shape, Strides, 
-    Storage, Shape, Strides], 
+    [Storage, Shape, Strides,
+     Storage, Shape, Strides],
     None
 ]:
     """
@@ -285,10 +285,10 @@ def tensor_map(
 def tensor_zip(
     fn: Callable[[float, float], float]
 ) -> Callable[
-    [Storage, Shape, Strides, 
-     Storage, Shape, Strides, 
-     Storage, Shape, Strides], 
-     None
+    [Storage, Shape, Strides,
+     Storage, Shape, Strides,
+     Storage, Shape, Strides],
+    None
 ]:
     """
     Low-level implementation of tensor zip between
@@ -345,10 +345,10 @@ def tensor_zip(
 def tensor_reduce(
     fn: Callable[[float, float], float]
 ) -> Callable[
-    [Storage, Shape, Strides, 
-     Storage, Shape, Strides, 
-     int], 
-     None
+    [Storage, Shape, Strides,
+     Storage, Shape, Strides,
+     int],
+    None
 ]:
     """
     Low-level implementation of tensor reduce.

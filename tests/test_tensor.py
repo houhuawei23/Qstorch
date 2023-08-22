@@ -2,8 +2,8 @@ from typing import Callable, Iterable, List, Tuple
 
 import pytest
 from hypothesis import given
-from hypothesis.strategies import DataObject, data, lists, permutations
-
+from hypothesis.strategies import DataObject, lists, permutations
+from hypothesis.strategies import data as data_strategy
 from qstorch import MathTestVariable, Tensor, grad_check, tensor
 
 from .strategies import assert_close, small_floats
@@ -58,17 +58,16 @@ def test_one_derivative(
     "Test the gradient of a one-arg tensor function"
     name, _, tensor_fn = fn
     grad_check(tensor_fn, t1)
-
-
-@given(data(), tensors())
+import pdb
 @pytest.mark.task2_4
+@given(data_strategy(), tensors())
 def test_permute(data: DataObject, t1: Tensor) -> None:
     "Test the permute function"
     permutation = data.draw(permutations(range(len(t1.shape))))
 
     def permute(a: Tensor) -> Tensor:
         return a.permute(*permutation)
-
+    print(f"permute, type:{type(permutation)}:{permutation}")
     grad_check(permute, t1)
 
 

@@ -48,6 +48,7 @@ class Function:
     def apply(cls, *vals: Tensor) -> Tensor:
         raw_vals = []
         need_grad = False
+        # detach from the graph, so that intermediate values are not tracked
         for v in vals:
             if v.requires_grad():
                 need_grad = True
@@ -346,7 +347,9 @@ def _tensor(
 
 
 def tensor(
-    ls: Any, backend: TensorBackend = SimpleBackend, requires_grad: bool = False
+    ls: Any, 
+    backend: TensorBackend = SimpleBackend, 
+    requires_grad: bool = False
 ) -> Tensor:
     """
     Produce a tensor with data and shape from ls

@@ -66,7 +66,7 @@ class Tensor:
     handles multidimensional arrays.
     """
 
-    backend: TensorBackend
+    backend: TensorBackend      # backend of the tensor
     history: Optional[History]
     grad: Optional[Tensor]
     _tensor: TensorData
@@ -317,6 +317,9 @@ class Tensor:
         return self._tensor.tuple()
 
     def detach(self) -> Tensor:
+        """
+        Return a new tensor, detached from the current graph.
+        """
         return Tensor(self._tensor, backend=self.backend)
 
     # Variable elements for backprop

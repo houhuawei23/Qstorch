@@ -63,7 +63,7 @@ class ScalarFunction:
         # Call forward with the variables.
         c = cls._forward(ctx, *raw_vals)
         assert isinstance(c, float), "Expected return type float got %s" % (type(c))
-
+        
         # Create a new variable from the result with a new history.
         back = qstorch.scalar.ScalarHistory(cls, ctx, scalars)
         return qstorch.scalar.Scalar(c, back)

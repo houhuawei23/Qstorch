@@ -66,7 +66,7 @@ class Tensor:
     handles multidimensional arrays.
     """
 
-    backend: TensorBackend
+    backend: TensorBackend      # backend of the tensor
     history: Optional[History]
     grad: Optional[Tensor]
     _tensor: TensorData
@@ -87,14 +87,14 @@ class Tensor:
         assert backend is not None
         self._tensor = v
         self.history = back
-        self.backend = backend # backend of the tensor
+        self.backend = backend  # backend of the tensor
         self.grad = None
         if name is not None:
             self.name = name
         else:
             self.name = str(self.unique_id)
 
-        self.f = backend
+        # self.f = backend
 
     def requires_grad_(self, x: bool) -> None:
         self.history = History()
@@ -317,6 +317,9 @@ class Tensor:
         return self._tensor.tuple()
 
     def detach(self) -> Tensor:
+        """
+        Return a new tensor, detached from the current graph.
+        """
         return Tensor(self._tensor, backend=self.backend)
 
     # Variable elements for backprop
@@ -353,7 +356,7 @@ class Tensor:
         assert h is not None
         assert h.last_fn is not None
         assert h.ctx is not None
-
+        
         x = h.last_fn._backward(h.ctx, d_output)
         assert len(x) == len(h.inputs), f"Bug in function {h.last_fn}"
         return [

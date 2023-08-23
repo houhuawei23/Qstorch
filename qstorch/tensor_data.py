@@ -41,7 +41,7 @@ def index_to_position(index: Index, strides: Strides) -> int:
 
     Returns:
         Position in storage
-    
+
     Examples:
         >>> index_to_position((1, 2), (2, 1))
         4
@@ -51,13 +51,12 @@ def index_to_position(index: Index, strides: Strides) -> int:
     # for i in range(index.size):
     #     sum += index[i]*strides[i]
     # return sum
-    sum = 0
+    pos = 0
     for i, v in enumerate(index):
-        sum += v * strides[i]
-    return sum
+        pos += v * strides[i]
+    return pos
     # return sum(map(lambda x: x[0]*x[1], zip(index, strides)))
     # return np.inner(index, strides)
-    
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -71,7 +70,7 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         ordinal: ordinal position to convert.
         shape : tensor shape.
         out_index : return index corresponding to position.
-    
+
     Examples:
         >>> shape = np.array([2, 3]), out_index = np.zeros(2)
         >>> to_index(5, shape, out_index)
@@ -80,15 +79,14 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
 
     """
     for i in range(len(shape) - 1, -1, -1):
-        out_index[i] = ordinal % shape[i] 
+        out_index[i] = ordinal % shape[i]
         ordinal = ordinal // shape[i]
 
 
-
 def broadcast_index(
-    big_index: Index, 
-    big_shape: Shape, 
-    shape: Shape, 
+    big_index: Index,
+    big_shape: Shape,
+    shape: Shape,
     out_index: OutIndex
 ) -> None:
     """
@@ -112,7 +110,7 @@ def broadcast_index(
     # big_shape_reversed = big_shape[::-1]
     # shape_reversed = shape[::-1]
     # big_index_reversed = big_index[::-1]
-    
+
     # # Process each dimension of the shapes
     # j = 0  # pointer for the smaller shape
     # for i in range(len(big_shape_reversed)):
@@ -152,14 +150,14 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         shape2 = (1,) * diff_dims + tuple(shape2)
     else:
         shape1 = (1,) * (-diff_dims) + tuple(shape1)
-    
+
     # Step 2, 3, and 4: Compute the broadcasted shape
     broadcasted_shape = []
     for dim1, dim2 in zip(shape1, shape2):
         if dim1 != dim2 and dim1 != 1 and dim2 != 1:
             raise IndexingError('Cannot broadcast')
         broadcasted_shape.append(max(dim1, dim2))
-    
+
     return tuple(broadcasted_shape)
 
 
@@ -200,7 +198,7 @@ class TensorData:
             raise IndexingError(f"Len of strides {strides} must match {shape}.")
         self._strides = array(strides)
         self._shape = array(shape)
-        
+
         self.strides = strides
         self.dims = len(strides)
         self.size = int(prod(shape))
@@ -251,7 +249,7 @@ class TensorData:
         # Check for errors
         if aindex.shape[0] != len(self.shape):
             raise IndexingError(f"Index {aindex} must be size of {self.shape}.")
-        
+
         for i, ind in enumerate(aindex):
             if ind >= self.shape[i]:
                 raise IndexingError(f"Index {aindex} out of range {self.shape}.")
@@ -289,7 +287,7 @@ class TensorData:
         Permute the dimensions of the tensor.
 
         Args:
-            *order: a permutation of the dimensions
+            *order: a permutation of the dimensions, tuple of ints.
 
         Returns:
             New `TensorData` with the same storage and a new dimension order.
@@ -298,7 +296,9 @@ class TensorData:
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
 
-        return TensorData(self._storage, tuple([self.shape[i] for i in order]), tuple([self.strides[i] for i in order]))
+        return TensorData(self._storage,
+                          tuple([self.shape[i] for i in order]),
+                          tuple([self.strides[i] for i in order]))
 
     def to_string(self) -> str:
         s = ""

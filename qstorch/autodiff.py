@@ -21,6 +21,10 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
 
     Returns:
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
+    
+    Examples:
+        >>> central_difference(lambda x, y: x * y, [2.0, 3.0], arg=0)
+        # 3.0
     """
     if not callable(f):
         raise TypeError("The provided 'f' argument must be a callable function.")

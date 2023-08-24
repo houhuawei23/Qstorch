@@ -262,7 +262,7 @@ def tensor_reduce(
                 a_index = out_index.copy()
                 a_index[reduce_dim] = j
                 apos = index_to_position(a_index, a_strides)
-                out[pos] = fn(out[pos], a_storage[apos])
+                out[pos] = fn(a_storage[apos], out[pos])
 
     return njit(parallel=True)(_reduce)  # type: ignore
 
@@ -308,11 +308,48 @@ def _tensor_matrix_multiply(
     Returns:
         None : Fills in `out`
     """
-    a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
-    b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
+    # check dims match
+    assert a_shape[-1] == b_shape[-2]
 
-    # TODO: Implement for Task 3.2.
-    raise NotImplementedError('Need to implement for Task 3.2')
+    # a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
+    # b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
+    # TODO: Implement the fast version of tensor_matrix_multiply
+    # using prange and no index buffers.
+    # Iterate over batches (if present) and other leading dimensions
+    # for i in prange(a_shape[0]):
+    #     for j in range(a_shape[1]):
+    #         for k in range(b_shape[1]):
+    #             sum_val = 0.0
+    #             for l in range(a_shape[-1]):
+    #                 a_val = a_storage[i * a_batch_stride + j * a_strides[1] + l * a_strides[-1]]
+    #                 b_val = b_storage[i * b_batch_stride + l * b_strides[-2] + k * b_strides[-1]]
+    #                 sum_val += a_val * b_val
+    #             out[i * out_strides[0] + j * out_strides[1] + k * out_strides[-1]] = sum_val
+    out_index = out_shape.copy()
+    a_index = a_shape.copy()
+    b_index = b_shape.copy()
+    # print(f"len(out): {len(out)}")
+    # print(f"out.size: {out.size}")
+    for i in prange(out.size): # traverse all elements in out
+        temp_i = i + 0
+        to_index(temp_i, out_shape, out_index)
+        out_pos = index_to_position(out_index, out_strides)
+        last_dim = a_shape[-1]
+        out[out_pos] = 0.0
+        for j in range(last_dim): # traverse the last dimension of a
+            temp_j = j + 0
+            a_tmp_index = out_index.copy()
+            a_tmp_index[-1] = temp_j
+            broadcast_index(a_tmp_index, out_shape, a_shape, a_index)
+            a_pos = index_to_position(a_index, a_strides)
+
+            b_tmp_index = out_index.copy()
+            b_tmp_index[-2] = temp_j
+            broadcast_index(b_tmp_index, out_shape, b_shape, b_index)
+            b_pos = index_to_position(b_index, b_strides)
+
+            out[out_pos] += (a_storage[a_pos] * b_storage[b_pos])
+
 
 
 tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)

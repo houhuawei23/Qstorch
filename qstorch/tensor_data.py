@@ -78,6 +78,9 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         array([1, 2])
 
     """
+    # why it can eliminate the "Overwrite of parallel loop index" error?
+    # because ordinal may be shared by multiple threads
+    ordinal = ordinal + 0 
     for i in range(len(shape) - 1, -1, -1):
         out_index[i] = ordinal % shape[i]
         ordinal = ordinal // shape[i]

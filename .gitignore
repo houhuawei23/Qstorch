@@ -134,3 +134,4 @@ req.extra.txt
 req.txt
 **/my_tests
 **/.vscode
+test_res

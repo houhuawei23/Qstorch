@@ -107,11 +107,11 @@ def test_sigmoid(a: float) -> None:
     * It crosses 0 at 0.5
     * It is strictly increasing.
     """
-    # TODO: Implement for Task 0.2.
+    import numpy as np
     result = sigmoid(a)
     assert 0.0 <= result <= 1.0
     assert_close(1.0 - result, sigmoid(-a))
-    assert_close(result, 0.5)
+    assert_close(result, 1 / (1 + np.exp(-a)))
     assert sigmoid(a + 1.0) - result > -1e-6
 
 @pytest.mark.task0_2

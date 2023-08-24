@@ -301,25 +301,31 @@ class TensorData:
                           tuple([self.strides[i] for i in order]))
 
     def to_string(self) -> str:
-        s = ""
+        s = "QStensor("
         for index in self.indices():
-            l = ""
-            for i in range(len(index) - 1, -1, -1):
+            r_zreo_num = 0
+            for i in range(self.dims - 1, -1, -1):
                 if index[i] == 0:
-                    l = "\n%s[" % ("\t" * i) + l
+                    r_zreo_num += 1
                 else:
                     break
-            s += l
-            v = self.get(index)
-            s += f"{v:3.2f}"
-            l = ""
-            for i in range(len(index) - 1, -1, -1):
-                if index[i] == self.shape[i] - 1:
-                    l += "]"
-                else:
-                    break
-            if l:
-                s += l
+            if r_zreo_num == 0:
+                left = ''
             else:
-                s += " "
-        return s
+                left = '\n' + ' ' * (self.dims - r_zreo_num) + '[' * r_zreo_num
+
+            r_full_num = 0
+            for i in range(self.dims - 1, -1, -1):
+                if index[i] == self.shape[i] - 1:
+                    r_full_num += 1
+                else:
+                    break
+
+            right = ']' * r_full_num
+            if r_full_num == 0:
+                right = ", " + right
+            if 2 <= r_full_num <= self.dims - 1:
+                right += "\n"
+
+            s += left + f"{self.get(index):3.2f}" + right
+        return s + ")"

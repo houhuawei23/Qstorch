@@ -28,10 +28,10 @@ class Parameter:
                 self.value.name = self.name
 
     def __repr__(self) -> str:
-        return repr(self.value)
+        return 'Parameter\n' + repr(self.value)
 
     def __str__(self) -> str:
-        return str(self.value)
+        return 'Parameter\n' + str(self.value)
 
 
 class Module:

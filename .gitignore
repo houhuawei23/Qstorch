@@ -132,5 +132,5 @@ data/
 pyodide
 req.extra.txt
 req.txt
-test0.py
-test1.py
+**/my_tests
+**/.vscode

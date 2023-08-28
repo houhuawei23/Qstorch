@@ -20,6 +20,9 @@ if TYPE_CHECKING:
 
 
 class MapProto(Protocol):
+    """
+    # why need this protocol?
+    """
     def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
         ...
 
@@ -271,8 +274,8 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        out_index = np.array(out_shape)
-        in_index = np.array(in_shape)
+        out_index = np.zeros(len(out_shape), dtype=np.int32)
+        in_index = np.array(len(in_shape), dtype=np.int32)
         for i in range(out.size):
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
@@ -324,9 +327,9 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        out_index = np.array(out_shape)
-        a_index = np.array(a_shape)
-        b_index = np.array(b_shape)
+        out_index = np.zeros(len(out_shape), dtype=np.int32)
+        a_index = np.zeros(len(a_shape), dtype=np.int32)
+        b_index = np.zeros(len(b_shape), dtype=np.int32)
         for i in range(out.size):
             to_index(i, out_shape, out_index)
             op = index_to_position(out_index, out_strides)
@@ -372,7 +375,7 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        out_index = np.array(out_shape)
+        out_index = np.zeros(len(out_shape), dtype=np.int32)
         for i in range(out.size):
             to_index(i, out_shape, out_index)
             pos = index_to_position(out_index, out_strides)

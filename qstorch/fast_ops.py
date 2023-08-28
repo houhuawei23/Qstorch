@@ -134,7 +134,9 @@ class FastOps(TensorOps):
 
 def tensor_map(
     fn: Callable[[float], float]
-) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides], None]:
+) -> Callable[[Storage, Shape, Strides,
+               Storage, Shape, Strides],
+              None]:
     """
     NUMBA low_level tensor_map function. See `tensor_ops.py` for description.
 
@@ -166,15 +168,24 @@ def tensor_map(
             broadcast_index(out_index, out_shape, in_shape, in_index)
             data = in_storage[index_to_position(in_index, in_strides)]
             out[index_to_position(out_index, out_strides)] = fn(data)
+        out_index = np.zeros(len(out_shape), dtype=np.int32)
+        in_index = np.zeros(len(in_shape), dtype=np.int32)
+        for i in range(out.size):
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            data = in_storage[index_to_position(in_index, in_strides)]
+            out[index_to_position(out_index, out_strides)] = fn(data)
 
-    return njit(parallel=True)(_map)  # type: ignore
+    return njit(parallel=True)(_map)
 
 
 def tensor_zip(
     fn: Callable[[float, float], float]
-) -> Callable[
-    [Storage, Shape, Strides, Storage, Shape, Strides, Storage, Shape, Strides], None
-]:
+) -> Callable[[Storage, Shape, Strides,
+               Storage, Shape, Strides,
+               Storage, Shape, Strides],
+              None
+              ]:
     """
     NUMBA higher-order tensor zip function. See `tensor_ops.py` for description.
 
@@ -203,24 +214,31 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
+        out_index = np.zeros(len(out_shape), dtype=np.int32)
+        a_index = np.zeros(len(a_shape), dtype=np.int32)
+        b_index = np.zeros(len(b_shape), dtype=np.int32)
         for i in prange(out.size):
-            a_index = np.zeros(a_shape.size, dtype=np.int32)
-            b_index = np.zeros(b_shape.size, dtype=np.int32)
-            out_index = np.zeros(out_shape.size, dtype=np.int32)
-            to_index(i, out_shape, out_index)
-            broadcast_index(out_index, out_shape, a_shape, a_index)
-            broadcast_index(out_index, out_shape, b_shape, b_index)
-            a_data = a_storage[index_to_position(a_index, a_strides)]
-            b_data = b_storage[index_to_position(b_index, b_strides)]
-            out_data = fn(a_data, b_data)
-            out[index_to_position(out_index, out_strides)] = out_data
+            ain_index = np.array(a_shape)
+            aout_index = np.array(out_shape)
+            bin_index = np.array(b_shape)
+            bout_index = np.array(out_shape)
+            to_index(i, a_shape, ain_index)
+            broadcast_index(aout_index, out_shape, a_shape, ain_index)
+            broadcast_index(bout_index, out_shape, b_shape, bin_index)
+            apos = index_to_position(ain_index, a_strides)
+            bpos = index_to_position(bin_index, b_strides)
+            data = fn(a_storage[apos], b_storage[bpos])
+            out[index_to_position(bout_index, out_strides)] = data
 
-    return njit(parallel=True)(_zip)  # type: ignore
+    return njit(parallel=True)(_zip)
 
 
 def tensor_reduce(
     fn: Callable[[float, float], float]
-) -> Callable[[Storage, Shape, Strides, Storage, Shape, Strides, int], None]:
+) -> Callable[[Storage, Shape, Strides,
+               Storage, Shape, Strides,
+               int],
+              None]:
     """
     NUMBA higher-order tensor reduce function. See `tensor_ops.py` for description.
 
@@ -246,10 +264,8 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        out_dim = a_shape.size
-        n = out.size
-        for i in prange(n):
-            out_index = np.zeros(out_dim, dtype=np.int32)
+        for i in prange(out.size):
+            out_index = np.array(out_shape)
             to_index(i, out_shape, out_index)
             pos = index_to_position(out_index, out_strides)
             reduce_dim_size = a_shape[reduce_dim]

@@ -78,10 +78,12 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         array([1, 2])
 
     """
-    _ordinal = ordinal + 0
-    for i in range(shape.size - 1, -1, -1):
-        out_index[i] = _ordinal % shape[i]
-        _ordinal = _ordinal // shape[i]
+    # why it can eliminate the "Overwrite of parallel loop index" error?
+    # because ordinal may be shared by multiple threads
+    ordinal = ordinal + 0 
+    for i in range(len(shape) - 1, -1, -1):
+        out_index[i] = ordinal % shape[i]
+        ordinal = ordinal // shape[i]
 
 
 def broadcast_index(

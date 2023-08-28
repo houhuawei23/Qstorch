@@ -253,16 +253,30 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        out_index = np.zeros(len(out_shape), dtype=np.int32)
+        n = len(out)
+        out_dims = len(out_shape)
+        for i in prange(n):
+            out_index = np.zeros(out_dims, dtype=np.int32)
+            to_index(i,out_shape,out_index)
+            out_idx = index_to_position(out_index,out_strides)
 
-        for i in prange(out.size):
-            to_index(i, out_shape, out_index)
-            pos = index_to_position(out_index, out_strides)
-            for j in range(a_shape[reduce_dim]):
-                a_index = out_index.copy()
-                a_index[reduce_dim] = j
-                apos = index_to_position(a_index, a_strides)
-                out[pos] = fn(a_storage[apos], out[pos])
+            reduce_dim_size = a_shape[reduce_dim]
+
+            for j in range(reduce_dim_size):
+                idx_a = out_index.copy()
+                idx_a[reduce_dim] = j
+                pos_a = index_to_position(idx_a, a_strides)
+                out[out_idx] = fn(out[out_idx],a_storage[pos_a])
+        # out_index = np.zeros(len(out_shape), dtype=np.int32)
+
+        # for i in prange(out.size):
+        #     to_index(i, out_shape, out_index)
+        #     pos = index_to_position(out_index, out_strides)
+        #     for j in range(a_shape[reduce_dim]):
+        #         a_index = out_index.copy()
+        #         a_index[reduce_dim] = j
+        #         apos = index_to_position(a_index, a_strides)
+        #         out[pos] = fn(a_storage[apos], out[pos])
 
     return njit(parallel=True)(_reduce)  # type: ignore
 

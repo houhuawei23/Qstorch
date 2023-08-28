@@ -327,43 +327,77 @@ def _tensor_matrix_multiply(
 
     # a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     # b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
-    # TODO: Implement the fast version of tensor_matrix_multiply
-    # using prange and no index buffers.
-    # Iterate over batches (if present) and other leading dimensions
-    # for i in prange(a_shape[0]):
-    #     for j in range(a_shape[1]):
-    #         for k in range(b_shape[1]):
-    #             sum_val = 0.0
-    #             for l in range(a_shape[-1]):
-    #                 a_val = a_storage[i * a_batch_stride + j * a_strides[1] + l * a_strides[-1]]
-    #                 b_val = b_storage[i * b_batch_stride + l * b_strides[-2] + k * b_strides[-1]]
-    #                 sum_val += a_val * b_val
-    #             out[i * out_strides[0] + j * out_strides[1] + k * out_strides[-1]] = sum_val
-    out_index = out_shape.copy()
-    a_index = a_shape.copy()
-    b_index = b_shape.copy()
-    # print(f"len(out): {len(out)}")
-    # print(f"out.size: {out.size}")
-    for i in prange(out.size): # traverse all elements in out
-        temp_i = i + 0
-        to_index(temp_i, out_shape, out_index)
-        out_pos = index_to_position(out_index, out_strides)
+    
+    n = out.size
+
+    for i in prange(n):
+        # get indexes
+        out_index = out_shape.copy()
+        ti = i + 0
+        for ki in range(len(out_shape) - 1, -1, -1):
+            out_index[ki] = ti % out_shape[ki]
+            ti = ti // out_shape[ki]
+        out_pos = 0
+        for k, v in enumerate(out_index):
+            out_pos += v * out_strides[k]
         last_dim = a_shape[-1]
-        out[out_pos] = 0.0
-        for j in range(last_dim): # traverse the last dimension of a
-            temp_j = j + 0
-            a_tmp_index = out_index.copy()
-            a_tmp_index[-1] = temp_j
-            broadcast_index(a_tmp_index, out_shape, a_shape, a_index)
-            a_pos = index_to_position(a_index, a_strides)
+        for j in range(last_dim):
+            tj = j + 0
+            a_index = a_shape.copy()
+            a_loop_index = out_index.copy()
+            a_loop_index[-1] = tj
+            # broadcast_index(a_loop_index, out_shape, a_shape, a_index)
+            # def broadcast_index(
+            #     big_index: Index,
+            #     big_shape: Shape,
+            #     shape: Shape,
+            #     out_index: OutIndex
+            # )
+            for ki in range(a_shape.size):
+                offset = ki + out_shape.size - a_shape.size
+                a_index[ki] = a_loop_index[offset] if a_shape[ki] != 1 else 0
 
-            b_tmp_index = out_index.copy()
-            b_tmp_index[-2] = temp_j
-            broadcast_index(b_tmp_index, out_shape, b_shape, b_index)
-            b_pos = index_to_position(b_index, b_strides)
+            a_pos = 0
+            for k, v in enumerate(a_index):
+                a_pos += v * a_strides[k]
+            
+            b_index = b_shape.copy()
+            b_loop_index = out_index.copy()
+            b_loop_index[-2] = tj
+            # broadcast_index(b_loop_index, out_shape, b_shape, b_index)
+            for ki in range(b_shape.size):
+                offset = ki + out_shape.size - b_shape.size
+                b_index[ki] = b_loop_index[offset] if b_shape[ki] != 1 else 0
 
-            out[out_pos] += (a_storage[a_pos] * b_storage[b_pos])
-
-
+            b_pos = 0
+            for k, v in enumerate(b_index):
+                b_pos += v * b_strides[k]
+            out[out_pos] += a_storage[a_pos] * b_storage[b_pos]
 
 tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)
+
+# do not use the function below
+def batched_mm(a: Tensor, b: Tensor) -> Tensor:
+    """
+    Batched matrix multiplication.
+    """
+    if a.shape[-1] != b.shape[-2]:
+        raise IndexError("a and b cannot multiply!")
+    a_2dflag = False
+    if len(a.shape) == 2:
+        a = a.contiguous().view(1, a.shape[0], a.shape[1])
+        a_2dflag = True
+    b_2dflag = False
+    if len(b.shape) == 2:
+        b = b.contiguous().view(1, b.shape[0], b.shape[1])
+        b_2dflag = True
+    both2d = a_2dflag and b_2dflag
+    out_shape = list(shape_broadcast(a.shape[:-2], b.shape[:-2]))
+    out_shape.append(a.shape[-2])
+    out_shape.append(b.shape[-1])
+
+    out = a.zeros(tuple(out_shape))
+    tensor_matrix_multiply(*out.tuple(), *a.tuple(), *b.tuple())
+    if both2d:
+        out = out.view(out.shape[1], out.shape[2])
+    return out

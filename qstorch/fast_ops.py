@@ -159,17 +159,13 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        for _i in prange(out_shape.size):
-            _out_shape = out_shape
-            _in_shape = in_shape
-            _in_strides = in_strides
-            _out_strides = out_strides
-            _out_index = np.zeros_like(out_shape, dtype=np.int32)
-            _in_index = np.zeros_like(in_shape, dtype=np.int32)
-            to_index(_i, _out_shape, _out_index)
-            broadcast_index(_out_index, _out_shape, _in_shape, _in_index)
-            data = in_storage[index_to_position(_in_index, _in_strides)]
-            out[index_to_position(_out_index, _out_strides)] = fn(data)
+        for i in prange(out_shape.size):
+            out_index = np.zeros(out_shape.size, dtype=np.int32)
+            in_index = np.zeros(in_shape.size, dtype=np.int32)
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            data = in_storage[index_to_position(in_index, in_strides)]
+            out[index_to_position(out_index, out_strides)] = fn(data)
 
     return njit(parallel=True)(_map)  # type: ignore
 
@@ -208,17 +204,16 @@ def tensor_zip(
         b_strides: Strides,
     ) -> None:
         for i in prange(out.size):
-            ain_index = np.array(a_shape)
-            aout_index = np.array(out_shape)
-            bin_index = np.array(b_shape)
-            bout_index = np.array(out_shape)
-            to_index(i, a_shape, ain_index)
-            broadcast_index(aout_index, out_shape, a_shape, ain_index)
-            broadcast_index(bout_index, out_shape, b_shape, bin_index)
-            apos = index_to_position(ain_index, a_strides)
-            bpos = index_to_position(bin_index, b_strides)
-            data = fn(a_storage[apos], b_storage[bpos])
-            out[index_to_position(bout_index, out_strides)] = data
+            a_index = np.zeros(a_shape.size, dtype=np.int32)
+            b_index = np.zeros(b_shape.size, dtype=np.int32)
+            out_index = np.zeros(out_shape.size, dtype=np.int32)
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            a_data = a_storage[index_to_position(a_index, a_strides)]
+            b_data = b_storage[index_to_position(b_index, b_strides)]
+            out_data = fn(a_data, b_data)
+            out[index_to_position(out_index, out_strides)] = out_data
 
     return njit(parallel=True)(_zip)  # type: ignore
 
@@ -251,11 +246,14 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        for i in prange(out.size):
-            out_index = np.array(out_shape)
+        out_dim = a_shape.size
+        n = out.size
+        for i in prange(n):
+            out_index = np.zeros(out_dim, dtype=np.int32)
             to_index(i, out_shape, out_index)
             pos = index_to_position(out_index, out_strides)
-            for j in range(a_shape[reduce_dim]):
+            reduce_dim_size = a_shape[reduce_dim]
+            for j in range(reduce_dim_size):
                 a_index = out_index.copy()
                 a_index[reduce_dim] = j
                 apos = index_to_position(a_index, a_strides)

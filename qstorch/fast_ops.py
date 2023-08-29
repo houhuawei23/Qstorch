@@ -167,7 +167,7 @@ def tensor_map(
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
             data = in_storage[index_to_position(in_index, in_strides)]
-            out[index_to_position(out_index, out_strides)] = fn(data)
+            out[i] = fn(data) # index_to_position(out_index, out_strides)
 
     return njit(parallel=True)(_map)
 
@@ -212,12 +212,12 @@ def tensor_zip(
         b_index = np.zeros(len(b_shape), dtype=np.int32)
         for i in prange(out.size):
             to_index(i, out_shape, out_index)
-            op = index_to_position(out_index, out_strides)
+            # op = index_to_position(out_index, out_strides)
             broadcast_index(out_index, out_shape, a_shape, a_index)
             ap = index_to_position(a_index, a_strides)
             broadcast_index(out_index, out_shape, b_shape, b_index)
             bp = index_to_position(b_index, b_strides)
-            out[op] = fn(a_storage[ap], b_storage[bp])
+            out[i] = fn(a_storage[ap], b_storage[bp])
 
     return njit(parallel=True)(_zip)
 
@@ -258,7 +258,7 @@ def tensor_reduce(
         for i in prange(n):
             out_index = np.zeros(out_dims, dtype=np.int32)
             to_index(i,out_shape,out_index)
-            out_idx = index_to_position(out_index,out_strides)
+            # out_idx = index_to_position(out_index,out_strides)
 
             reduce_dim_size = a_shape[reduce_dim]
 
@@ -266,7 +266,7 @@ def tensor_reduce(
                 idx_a = out_index.copy()
                 idx_a[reduce_dim] = j
                 pos_a = index_to_position(idx_a, a_strides)
-                out[out_idx] = fn(out[out_idx],a_storage[pos_a])
+                out[i] = fn(out[i],a_storage[pos_a])
         # out_index = np.zeros(len(out_shape), dtype=np.int32)
 
         # for i in prange(out.size):
@@ -337,9 +337,9 @@ def _tensor_matrix_multiply(
         for ki in range(len(out_shape) - 1, -1, -1):
             out_index[ki] = ti % out_shape[ki]
             ti = ti // out_shape[ki]
-        out_pos = 0
-        for k, v in enumerate(out_index):
-            out_pos += v * out_strides[k]
+        # out_pos = 0
+        # for k, v in enumerate(out_index):
+        #     out_pos += v * out_strides[k]
         last_dim = a_shape[-1]
         for j in range(last_dim):
             tj = j + 0
@@ -372,7 +372,7 @@ def _tensor_matrix_multiply(
             b_pos = 0
             for k, v in enumerate(b_index):
                 b_pos += v * b_strides[k]
-            out[out_pos] += a_storage[a_pos] * b_storage[b_pos]
+            out[i] += a_storage[a_pos] * b_storage[b_pos]
 
 tensor_matrix_multiply = njit(parallel=True, fastmath=True)(_tensor_matrix_multiply)
 

@@ -154,7 +154,12 @@ def tensor_map(
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError('Need to implement for Task 3.3')
+        if i < out_size:
+            to_index(i, out_shape, out_index)
+            broadcast_index(out_index, out_shape, in_shape, in_index)
+            data = in_storage[index_to_position(in_index, in_strides)]
+            out[i] = fn(data) # index_to_position(out_index, out_strides)
+        # raise NotImplementedError('Need to implement for Task 3.3')
 
     return cuda.jit()(_map)  # type: ignore
 
@@ -195,8 +200,15 @@ def tensor_zip(
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
 
-        # TODO: Implement for Task 3.3.
-        raise NotImplementedError('Need to implement for Task 3.3')
+        if i < out_size:
+            to_index(i, out_shape, out_index)
+            # op = index_to_position(out_index, out_strides)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
+            ap = index_to_position(a_index, a_strides)
+            broadcast_index(out_index, out_shape, b_shape, b_index)
+            bp = index_to_position(b_index, b_strides)
+            out[i] = fn(a_storage[ap], b_storage[bp])
+
 
     return cuda.jit()(_zip)  # type: ignore
 
@@ -279,7 +291,8 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError('Need to implement for Task 3.3')
+        # raise NotImplementedError('Need to implement for Task 3.3')
+        if 
 
     return cuda.jit()(_reduce)  # type: ignore
 
